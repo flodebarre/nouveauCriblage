@@ -6,6 +6,7 @@ output:
       code_folding: hide
       toc: TRUE
       toc_float: TRUE
+      self_contained: no
 editor_options:
   chunk_output_type: console
 ---
@@ -39,22 +40,47 @@ dat[-13]
 # Plots
 
 ```{r}
-ntot <- dat$nbTestInterp_L452R
-p <- dat$pL452R/100
-t <- dat$dateEnd
+library(RColorBrewer)
+colMut <- brewer.pal(n = 8, name = "Dark2")
+```
 
-maincol <- "#fe4a49"
-par(las = 1)
-plot(base::as.Date(t), p, ylim = c(0, 1.1*max(p)), frame.plot = FALSE, yaxs = "i", 
-     xlab = "date", ylab = "Proportion L452R", type = "o", pch = 16, col = maincol, lwd = 2)
-mtext("Parmi les n(t) tests interprétables recherchant la mutation
-Interval de confiance binomial sur ce nombre de tests n(t)", side = 3, cex = 0.8, adj = 1, line = 1)
 
-# Computation of the confidence interval
-deltaItv <- 1.96 * sqrt(p * (1-p) / ntot)
+```{r}
+muts <- c("E484K", "E484Q", "L452R")
+ymax <- 0.27
 
-xx <- base::as.Date(t)
-polygon(x = c(xx, rev(xx), xx[1]), y = c(p + deltaItv, rev(p - deltaItv), (p + deltaItv)[1]), border = NA, col = adjustcolor(maincol, alpha.f = 0.3))
+for(i in seq_along(muts)){
+  
+  mutation <- muts[i]
+  ntot <- dat[, paste0("nbTestInterp_", mutation)]
+  p <- dat[, paste0("p", mutation)]/100
+  t <- dat$dateEnd
+  
+  # Computation of the confidence interval
+  deltaItv <- 1.96 * sqrt(p * (1-p) / ntot)
+  keepPts <- !is.na(deltaItv) 
+  # Remove points for which the itv cannot be computed
+  deltaItv <- deltaItv[keepPts]
+  pp <- p[keepPts]
+
+  
+  maincol <- colMut[i]
+  par(las = 1, mgp = c(2.75, 0.5, 0), tck = -0.025)
+  # ymax <- 1.1*max(pp+deltaItv)
+  plot(base::as.Date(t), p, ylim = c(0, ymax), frame.plot = FALSE, yaxs = "i", 
+       xlab = "", ylab = paste0("Proportion ", mutation), type = "o", pch = 16, col = maincol, lwd = 2, main = mutation)
+  mtext("date", side = 1, line = 2)
+  mtext("Parmi les n(t) tests interprétables recherchant la mutation
+  Interval de confiance binomial sur ce nombre de tests n(t)", side = 3, cex = 0.7, adj = 0.5, line = 0)
+  
+  
+  xx <- base::as.Date(t)[keepPts]
+  polygon(x = c(xx, rev(xx), xx[1]), y = c(pp + deltaItv, rev(pp - deltaItv), (pp + deltaItv)[1]), border = NA, col = adjustcolor(maincol, alpha.f = 0.3))
+  
+  mtext("Données et code : https://github.com/flodebarre/nouveauCriblage", side = 1, line = 3.5, cex = 0.7, col = gray(0.5))
+  
+}
+
 
 ```
 
