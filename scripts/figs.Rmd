@@ -1,0 +1,60 @@
+---
+title: "Nouveau Criblage"
+author: "FD"
+output: 
+  html_document: 
+      code_folding: hide
+      toc: TRUE
+      toc_float: TRUE
+editor_options:
+  chunk_output_type: console
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, eval = FALSE, include = FALSE}
+setwd("scripts/")
+```
+
+# Load data
+
+```{r}
+dat <- read.csv("../nouveauCriblage.csv", stringsAsFactors = FALSE)
+```
+
+## Clean data 
+Compute numbers of interpretable tests
+
+```{r}
+dat$nbTestInterp_E484K <- round(dat$nbE484K / (dat$pE484K/100))
+dat$nbTestInterp_E484Q <- round(dat$nbE484Q / (dat$pE484Q/100))
+dat$nbTestInterp_L452R <- round(dat$nbL452R / (dat$pL452R/100))
+
+dat[-13]
+```
+
+# Plots
+
+```{r}
+ntot <- dat$nbTestInterp_L452R
+p <- dat$pL452R/100
+t <- dat$dateEnd
+
+maincol <- "#fe4a49"
+par(las = 1)
+plot(base::as.Date(t), p, ylim = c(0, 1.1*max(p)), frame.plot = FALSE, yaxs = "i", 
+     xlab = "date", ylab = "Proportion L452R", type = "o", pch = 16, col = maincol, lwd = 2)
+mtext("Parmi les n(t) tests interprétables recherchant la mutation
+Interval de confiance binomial sur ce nombre de tests n(t)", side = 3, cex = 0.8, adj = 1, line = 1)
+
+# Computation of the confidence interval
+deltaItv <- 1.96 * sqrt(p * (1-p) / ntot)
+
+xx <- base::as.Date(t)
+polygon(x = c(xx, rev(xx), xx[1]), y = c(p + deltaItv, rev(p - deltaItv), (p + deltaItv)[1]), border = NA, col = adjustcolor(maincol, alpha.f = 0.3))
+
+```
+
