@@ -11,6 +11,7 @@ Les voici donc regroupées dans un [fichier .csv](https://github.com/flodebarre/
 
 Column name | Content |
 --- | --- |
+location | Echelle géographique (si on a le courage d'entrer les données régionales)|
 nbCriblage | Nombre de résultats de criblage saisis en nouvelle nomenclature |
 propTest | Proportion des tests (TAG et PCR) positifs qui sont criblés |
 nbXXX | Nombre de résultats positifs pour la mutation XXX |
