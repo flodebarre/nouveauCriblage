@@ -6,7 +6,7 @@ Les données de criblage sont enfin disponibles sur [data.gouv.fr](https://www.d
 
 Le code pour tracer les figures est [ici](https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/mutations.Rmd).
 
-La sortie HTML permettant de voir les figures est [là](https://htmlpreview.github.io/ ?https://raw.githubusercontent.com/flodebarre/nouveauCriblage/main/scripts/mutations.html). 
+La sortie HTML permettant de voir les figures est [là](https://htmlpreview.github.io/?https://raw.githubusercontent.com/flodebarre/nouveauCriblage/main/scripts/mutations.html). 
 
 ## Avant les données ouvertes
 
