@@ -14,6 +14,7 @@ editor_options:
 ```{r, eval=FALSE}
 rm(list = ls()) # I don't care what you think
 for(i in dev.list()) dev.off()
+setwd("scripts/")
 ```
 
 ```{r setup, include=FALSE}
@@ -53,22 +54,22 @@ URL_Regions <- "https://www.data.gouv.fr/fr/datasets/r/5ff0cad6-f150-47ea-a4e0-5
 URL_France <- "https://www.data.gouv.fr/fr/datasets/r/848debc4-0e42-4e3b-a176-afc285ed5401"
 ```
 
-Links do not work because of redirection; replace by proper link
-
-```{r}
-URL_Deps <- "https://static.data.gouv.fr/resources/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/20210701-115629/sp-mutations-7j.csv"
-
-URL_Regions <- "https://static.data.gouv.fr/resources/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/20210701-115557/sp-mutations-7j.csv"
-
-URL_France <- "https://static.data.gouv.fr/resources/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/20210701-114500/sp-mutations-7j.csv"
-```
-
 
 ```{r}
 # Download files from repo
-system(paste0("curl ", URL_France, " -o ../data/muts_France.csv"))
-system(paste0("curl ", URL_Regions, " -o ../data/muts_Regions.csv"))
-system(paste0("curl ", URL_Deps, " -o ../data/muts_Deps.csv"))
+# Need to use extra option to follow the redirection
+download.file(URL_France, 
+              destfile="../data/muts_France.csv",
+              method="curl",
+              extra='-L')
+download.file(URL_Regions, 
+              destfile="../data/muts_Regions.csv",
+              method="curl",
+              extra='-L')
+download.file(URL_Deps, 
+              destfile="../data/muts_Deps.csv",
+              method="curl",
+              extra='-L')
 
 
 dat.France <- read.csv("../data/muts_France.csv", sep = ";", stringsAsFactors = FALSE)
@@ -275,7 +276,7 @@ for(reg in unique.noNA(dat.Regions$reg_name)){
 
 ```{r}
 ymax <- max(1, 1.05*max(dat.Deps$nb_C1 / (dat.Deps$nb_C1 + dat.Deps$nb_C0), na.rm = TRUE))
-for(dep in unique.noNA(dat.Deps$departement)){
+for(dep in sort(unique.noNA(dat.Deps$departement))){
   dat <- dat.Deps[dat.Deps$departement == dep, ]
   plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", dep), ymax = ymax)
 }
@@ -287,5 +288,8 @@ for(dep in unique.noNA(dat.Deps$departement)){
 dat <- dat.Deps[dat.Deps$departement == "Somme", ]
   plotNbCrib(dat)
   title("Somme")
+  
+    plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", "Somme"), ymax = ymax)
+
 ```
 
