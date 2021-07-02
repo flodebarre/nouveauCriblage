@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="FD" />
+
+
+<title>Mutations</title>
+
+<script src="mutations_files/header-attrs-2.7/header-attrs.js"></script>
+<script src="mutations_files/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="mutations_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="mutations_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="mutations_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="mutations_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="mutations_files/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="mutations_files/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="mutations_files/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="mutations_files/navigation-1.1/tabsets.js"></script>
+<script src="mutations_files/navigation-1.1/codefolding.js"></script>
+<link href="mutations_files/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="mutations_files/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-sm-12 col-md-4 col-lg-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-sm-12 col-md-8 col-lg-9">
+
+
+
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Mutations</h1>
+<h4 class="author">FD</h4>
+
+</div>
+
+
+<pre class="r"><code>rm(list = ls()) # I don&#39;t care what you think
+for(i in dev.list()) dev.off()</code></pre>
+<p>Source of the data:<br />
+<a href="https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/" class="uri">https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/</a></p>
+<div id="initializations" class="section level1">
+<h1>Initializations</h1>
+<pre class="r"><code>library(RColorBrewer)
+colMut &lt;- brewer.pal(n = 8, name = &quot;Dark2&quot;)
+
+col484K &lt;- colMut[1]
+col484Q &lt;- colMut[2]
+col452R &lt;- colMut[3]
+colTotCrib &lt;- colMut[8]
+colTot &lt;- colMut[7]</code></pre>
+<pre class="r"><code>unique.noNA &lt;- function(x){
+  unique(x[!is.na(x)])
+}</code></pre>
+</div>
+<div id="load-data" class="section level1">
+<h1>Load data</h1>
+<div id="test-data" class="section level2">
+<h2>Test data</h2>
+<pre class="r"><code>URL_Deps &lt;- &quot;https://www.data.gouv.fr/fr/datasets/r/4d3e5a8b-9649-4c41-86ec-5420eb6b530c&quot;
+URL_Regions &lt;- &quot;https://www.data.gouv.fr/fr/datasets/r/5ff0cad6-f150-47ea-a4e0-57e354c1b2a4&quot;
+URL_France &lt;- &quot;https://www.data.gouv.fr/fr/datasets/r/848debc4-0e42-4e3b-a176-afc285ed5401&quot;</code></pre>
+<p>Links do not work because of redirection; replace by proper link</p>
+<pre class="r"><code>URL_Deps &lt;- &quot;https://static.data.gouv.fr/resources/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/20210701-115629/sp-mutations-7j.csv&quot;
+
+URL_Regions &lt;- &quot;https://static.data.gouv.fr/resources/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/20210701-115557/sp-mutations-7j.csv&quot;
+
+URL_France &lt;- &quot;https://static.data.gouv.fr/resources/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/20210701-114500/sp-mutations-7j.csv&quot;</code></pre>
+<pre class="r"><code># Download files from repo
+system(paste0(&quot;curl &quot;, URL_France, &quot; -o ../data/muts_France.csv&quot;))
+system(paste0(&quot;curl &quot;, URL_Regions, &quot; -o ../data/muts_Regions.csv&quot;))
+system(paste0(&quot;curl &quot;, URL_Deps, &quot; -o ../data/muts_Deps.csv&quot;))
+
+
+dat.France &lt;- read.csv(&quot;../data/muts_France.csv&quot;, sep = &quot;;&quot;, stringsAsFactors = FALSE)
+dat.Regions &lt;- read.csv(&quot;../data/muts_Regions.csv&quot;, sep = &quot;;&quot;, stringsAsFactors = FALSE)
+dat.Deps &lt;- read.csv(&quot;../data/muts_Deps.csv&quot;, sep = &quot;;&quot;, stringsAsFactors = FALSE)</code></pre>
+</div>
+<div id="geographic-data" class="section level2">
+<h2>Geographic data</h2>
+<div id="regions" class="section level3">
+<h3>Regions</h3>
+<pre class="r"><code># Codes regions
+URL &lt;- &quot;https://www.data.gouv.fr/en/datasets/r/34fc7b52-ef11-4ab0-bc16-e1aae5c942e7&quot;
+dataFile &lt;- &quot;../data/coderegions.csv&quot;
+download.file(URL, dataFile)
+codesRegions &lt;- read.csv(dataFile, sep = &quot;,&quot;, stringsAsFactors = FALSE)
+
+# Turn into dictionary
+regs &lt;- codesRegions$nom_region
+names(regs) &lt;- as.character(codesRegions$code_region)</code></pre>
+<pre class="r"><code># Add region name
+dat.Regions$reg_name &lt;- regs[as.character(dat.Regions$reg)]
+
+unique(dat.Regions$reg_name)</code></pre>
+<pre><code>##  [1] &quot;Auvergne-Rhône-Alpes&quot;       &quot;Hauts-de-France&quot;           
+##  [3] &quot;Provence-Alpes-Côte d&#39;Azur&quot; &quot;Grand Est&quot;                 
+##  [5] &quot;Occitanie&quot;                  &quot;Normandie&quot;                 
+##  [7] &quot;Nouvelle-Aquitaine&quot;         &quot;Centre-Val de Loire&quot;       
+##  [9] &quot;Corse&quot;                      &quot;Bourgogne-Franche-Comté&quot;   
+## [11] &quot;Bretagne&quot;                   &quot;Pays de la Loire&quot;          
+## [13] &quot;Île-de-France&quot;              &quot;Guadeloupe&quot;                
+## [15] &quot;Martinique&quot;                 &quot;Guyane&quot;                    
+## [17] &quot;La Réunion&quot;                 &quot;Mayotte&quot;                   
+## [19] NA</code></pre>
+<pre class="r"><code>unique(dat.Regions[which(is.na(dat.Regions$reg_name)), &quot;reg&quot;])</code></pre>
+<pre><code>## [1] 7 8</code></pre>
+</div>
+<div id="departments" class="section level3">
+<h3>Departments</h3>
+<pre class="r"><code># Add name
+deps &lt;- read.csv(&quot;../data/departement2020.csv&quot;, stringsAsFactors = FALSE)
+# Turn into dictionnary
+dps &lt;- deps$libelle
+names(dps) &lt;- as.character(deps$dep)</code></pre>
+<pre class="r"><code>dat.Deps$departement &lt;- dps[as.character(dat.Deps$dep)]
+
+unique(dat.Deps$departement)</code></pre>
+<pre><code>##   [1] &quot;Ain&quot;                     &quot;Allier&quot;                 
+##   [3] &quot;Ardèche&quot;                 &quot;Cantal&quot;                 
+##   [5] &quot;Drôme&quot;                   &quot;Isère&quot;                  
+##   [7] &quot;Loire&quot;                   &quot;Haute-Loire&quot;            
+##   [9] &quot;Puy-de-Dôme&quot;             &quot;Rhône&quot;                  
+##  [11] &quot;Savoie&quot;                  &quot;Haute-Savoie&quot;           
+##  [13] &quot;Aisne&quot;                   &quot;Nord&quot;                   
+##  [15] &quot;Oise&quot;                    &quot;Pas-de-Calais&quot;          
+##  [17] &quot;Somme&quot;                   &quot;Alpes-de-Haute-Provence&quot;
+##  [19] &quot;Hautes-Alpes&quot;            &quot;Alpes-Maritimes&quot;        
+##  [21] &quot;Bouches-du-Rhône&quot;        &quot;Var&quot;                    
+##  [23] &quot;Vaucluse&quot;                &quot;Ardennes&quot;               
+##  [25] &quot;Aube&quot;                    &quot;Marne&quot;                  
+##  [27] &quot;Haute-Marne&quot;             &quot;Meurthe-et-Moselle&quot;     
+##  [29] &quot;Meuse&quot;                   &quot;Moselle&quot;                
+##  [31] &quot;Bas-Rhin&quot;                &quot;Haut-Rhin&quot;              
+##  [33] &quot;Vosges&quot;                  &quot;Ariège&quot;                 
+##  [35] &quot;Aude&quot;                    &quot;Aveyron&quot;                
+##  [37] &quot;Gard&quot;                    &quot;Haute-Garonne&quot;          
+##  [39] &quot;Gers&quot;                    &quot;Hérault&quot;                
+##  [41] &quot;Lot&quot;                     &quot;Lozère&quot;                 
+##  [43] &quot;Hautes-Pyrénées&quot;         &quot;Pyrénées-Orientales&quot;    
+##  [45] &quot;Tarn&quot;                    &quot;Tarn-et-Garonne&quot;        
+##  [47] &quot;Calvados&quot;                &quot;Eure&quot;                   
+##  [49] &quot;Manche&quot;                  &quot;Orne&quot;                   
+##  [51] &quot;Seine-Maritime&quot;          &quot;Charente&quot;               
+##  [53] &quot;Charente-Maritime&quot;       &quot;Corrèze&quot;                
+##  [55] &quot;Creuse&quot;                  &quot;Dordogne&quot;               
+##  [57] &quot;Gironde&quot;                 &quot;Landes&quot;                 
+##  [59] &quot;Lot-et-Garonne&quot;          &quot;Pyrénées-Atlantiques&quot;   
+##  [61] &quot;Deux-Sèvres&quot;             &quot;Vienne&quot;                 
+##  [63] &quot;Haute-Vienne&quot;            &quot;Cher&quot;                   
+##  [65] &quot;Eure-et-Loir&quot;            &quot;Indre&quot;                  
+##  [67] &quot;Indre-et-Loire&quot;          &quot;Loir-et-Cher&quot;           
+##  [69] &quot;Loiret&quot;                  &quot;Corse-du-Sud&quot;           
+##  [71] &quot;Haute-Corse&quot;             &quot;Côte-d&#39;Or&quot;              
+##  [73] &quot;Doubs&quot;                   &quot;Jura&quot;                   
+##  [75] &quot;Nièvre&quot;                  &quot;Haute-Saône&quot;            
+##  [77] &quot;Saône-et-Loire&quot;          &quot;Yonne&quot;                  
+##  [79] &quot;Territoire de Belfort&quot;   &quot;Côtes-d&#39;Armor&quot;          
+##  [81] &quot;Finistère&quot;               &quot;Ille-et-Vilaine&quot;        
+##  [83] &quot;Morbihan&quot;                &quot;Loire-Atlantique&quot;       
+##  [85] &quot;Maine-et-Loire&quot;          &quot;Mayenne&quot;                
+##  [87] &quot;Sarthe&quot;                  &quot;Vendée&quot;                 
+##  [89] &quot;Paris&quot;                   &quot;Seine-et-Marne&quot;         
+##  [91] &quot;Yvelines&quot;                &quot;Essonne&quot;                
+##  [93] &quot;Hauts-de-Seine&quot;          &quot;Seine-Saint-Denis&quot;      
+##  [95] &quot;Val-de-Marne&quot;            &quot;Val-d&#39;Oise&quot;             
+##  [97] &quot;Guadeloupe&quot;              &quot;Martinique&quot;             
+##  [99] &quot;Guyane&quot;                  &quot;La Réunion&quot;             
+## [101] &quot;Mayotte&quot;                 NA</code></pre>
+<pre class="r"><code>unique(dat.Deps[which(is.na(dat.Deps$departement)), &quot;dep&quot;])</code></pre>
+<pre><code>## [1] &quot;977&quot; &quot;978&quot;</code></pre>
+<pre class="r"><code># 977 Saint-Barthélemy, 978 Saint-Martin</code></pre>
+</div>
+</div>
+<div id="clean-data" class="section level2">
+<h2>Clean data</h2>
+<pre class="r"><code># Format date
+dat.France$date1 &lt;- as.Date(substring(dat.France$semaine, 1, 10))
+dat.France$date2 &lt;- as.Date(substring(dat.France$semaine, 12, 21))
+# Rewrite time as days since beginning of the data
+dat.France$time &lt;- dat.France$date2 - min(dat.France$date2)</code></pre>
+<pre class="r"><code># Format date
+dat.Regions$date1 &lt;- as.Date(substring(dat.Regions$semaine, 1, 10))
+dat.Regions$date2 &lt;- as.Date(substring(dat.Regions$semaine, 12, 21))
+# Rewrite time as days since beginning of the data
+dat.Regions$time &lt;- dat.Regions$date2 - min(dat.Regions$date2)</code></pre>
+<pre class="r"><code># Format date
+dat.Deps$date1 &lt;- as.Date(substring(dat.Deps$semaine, 1, 10))
+dat.Deps$date2 &lt;- as.Date(substring(dat.Deps$semaine, 12, 21))
+# Rewrite time as days since beginning of the data
+dat.Deps$time &lt;- dat.Deps$date2 - min(dat.Deps$date2)</code></pre>
+</div>
+<div id="consistency-checks" class="section level2">
+<h2>Consistency checks</h2>
+<pre class="r"><code>testDat &lt;- function(dat){
+  # Check number of genotypied tests
+  testTotA &lt;- sum(dat$nb_crib != (dat$nb_A0+ dat$nb_A1))
+  testTotB &lt;- sum(dat$nb_crib != (dat$nb_B0+ dat$nb_B1))
+  testTotC &lt;- sum(dat$nb_crib != (dat$nb_C0+ dat$nb_C1))
+  
+  # Test proportions of positive genotyping tests
+  # nb of digits in the result varies across datasets
+  if(all(dat$tx_A1 == round(dat$tx_A1, 1))){nDigits &lt;- 1}else{nDigits &lt;- 2}
+  testA &lt;- sum(dat$tx_A1 != round(dat$nb_A1 / (dat$nb_A0 + dat$nb_A1)*100, nDigits), na.rm = TRUE)
+  testB &lt;- sum(dat$tx_B1 != round(dat$nb_B1 / (dat$nb_B0 + dat$nb_B1)*100, nDigits), na.rm = TRUE)
+  testC &lt;- sum(dat$tx_C1 != round(dat$nb_C1 / (dat$nb_C0 + dat$nb_C1)*100, nDigits), na.rm = TRUE)
+  
+  testCrib &lt;- sum(round(dat$tx_crib / 100 * dat$nb_pos) != round(dat$nb_crib))
+  
+  # Return outcome
+  c(nrow(dat), testCrib, testTotA, testTotB, testTotB, testA, testB, testC)
+}
+
+testDat(dat.France)</code></pre>
+<pre><code>## [1] 23 22 23 23 23  0  0  0</code></pre>
+<pre class="r"><code>testDat(dat.Regions)</code></pre>
+<pre><code>## [1] 460 102 403 416 416   0   0   0</code></pre>
+<pre class="r"><code>testDat(dat.Deps)</code></pre>
+<pre><code>## [1] 2369    4 2207 2279 2279    0    0    0</code></pre>
+</div>
+</div>
+<div id="plots" class="section level1">
+<h1>Plots</h1>
+<div id="numbers-of-tests" class="section level2">
+<h2>Numbers of tests</h2>
+<pre class="r"><code>plotNbCrib &lt;- function(dat){
+  par(las = 1)
+  par(mar = c(4, 4, 3, 4))
+  plot(as.Date(dat$date2), dat$nb_pos, ylim = c(0, 1.05*max(dat$nb_pos, na.rm = TRUE)), yaxs = &quot;i&quot;, 
+       type = &quot;o&quot;, pch = 16, col = colTot, frame.plot = FALSE, 
+       xlab = &quot;date&quot;, ylab = &quot;&quot;)
+  
+  lines(as.Date(dat$date2), dat$nb_crib, type = &quot;o&quot;, pch = 16, col = colTotCrib)
+  
+  legend(x = &quot;topright&quot;, legend = c(&quot;Nb tests positifs&quot;, &quot;Nb tests criblés&quot;, &quot;Nb tests interprétables E484K&quot;, &quot;Nb tests interprétables E484Q&quot;, &quot;Nb tests interprétables L452R&quot;), 
+         col = c(colTot, colTotCrib, col484K, col484Q, col452R), 
+         pch = 16, lty = 1, box.col = gray(0, 0), bty = &quot;n&quot;)
+  
+  lines(as.Date(dat$date2), dat$nb_A0 + dat$nb_A1, type = &quot;o&quot;, pch = 16, col = col484K)
+  lines(as.Date(dat$date2), dat$nb_B0 + dat$nb_B1, type = &quot;o&quot;, pch = 16, col = col484Q)
+  lines(as.Date(dat$date2), dat$nb_C0 + dat$nb_C1, type = &quot;o&quot;, pch = 16, col = col452R)
+  
+  axis(4)
+}</code></pre>
+<pre class="r"><code>plotNbCrib(dat.France)
+title(main = &quot;France&quot;)</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<pre class="r"><code>for(reg in unique.noNA(dat.Regions$reg_name)){
+  dat &lt;- dat.Regions[dat.Regions$reg_name == reg, ]
+  plotNbCrib(dat)
+  title(main = reg)
+}</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-16-2.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-3.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-4.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-5.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-6.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-7.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-8.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-9.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-10.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-11.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-12.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-13.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-14.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-15.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-16.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-17.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-18.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-16-19.png" width="672" /></p>
+</div>
+<div id="proportions" class="section level2">
+<h2>Proportions</h2>
+<pre class="r"><code>plotMut &lt;- function(time, test0, test1, col, thetit, ymax = 0.5){
+  n &lt;- test1 + test0
+  p &lt;- test1 / (n)
+  
+  # Computation of the confidence interval
+  deltaItv &lt;- 1.96 * sqrt(p * (1-p) / n)
+  keepPts &lt;- !is.na(deltaItv) 
+  # Remove points for which the itv cannot be computed
+  deltaItv &lt;- deltaItv[keepPts]
+  pp &lt;- p[keepPts]
+
+  par(mar = c(5, 4, 4, 4))
+  par(las = 1)
+  plot(as.Date(time), p, ylim = c(0, ymax), frame.plot = FALSE, 
+     xlab = &quot;&quot;, ylab = &quot;p&quot;, yaxs = &quot;i&quot;, xaxs = &quot;i&quot;, 
+     type = &quot;o&quot;, col = col, pch = 16)
+mtext(&quot;  Parmi les n(t) tests interprétables recherchant la mutation
+  Intervalle de confiance binomial sur ce nombre de tests n(t)&quot;, side = 3, cex = 0.6, adj = 0, line = 0)
+mtext(&quot;date&quot;, line = 2, side = 1)  
+  axis(4)
+  xx &lt;- base::as.Date(time)[keepPts]
+  polygon(x = c(xx, rev(xx), xx[1]), y = c(pp + deltaItv, rev(pp - deltaItv), (pp + deltaItv)[1]), border = NA, col = adjustcolor(col, alpha.f = 0.3))
+  
+  mtext(&quot;Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
+Code : https://github.com/flodebarre/nouveauCriblage&quot;, side = 1, line = 3.5, cex = 0.7, col = gray(0.5), adj = 0)
+
+  title(main = thetit)
+}</code></pre>
+<div id="france" class="section level3">
+<h3>France</h3>
+<pre class="r"><code>plotMut(dat.France$date2, dat.France$nb_A0, dat.France$nb_A1, col = col484K, thetit = &quot;E484K, France&quot;)</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+<pre class="r"><code>plotMut(dat.France$date2, dat.France$nb_B0, dat.France$nb_B1, col = col484Q, thetit = &quot;E484Q, France&quot;)</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-18-2.png" width="672" /></p>
+<pre class="r"><code>plotMut(dat.France$date2, dat.France$nb_C0, dat.France$nb_C1, col = col452R, thetit = &quot;L452R, France&quot;)</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-18-3.png" width="672" /></p>
+</div>
+<div id="regions-1" class="section level3">
+<h3>Regions</h3>
+<pre class="r"><code>for(reg in unique.noNA(dat.Regions$reg_name)){
+  dat &lt;- dat.Regions[dat.Regions$reg_name == reg, ]
+  plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0(&quot;L452R, &quot;, reg))
+}</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-19-1.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-2.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-3.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-4.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-5.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-6.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-7.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-8.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-9.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-10.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-11.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-12.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-13.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-14.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-15.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-16.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-17.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-18.png" width="672" /></p>
+</div>
+<div id="departements" class="section level3">
+<h3>Departements</h3>
+<pre class="r"><code>ymax &lt;- max(1, 1.05*max(dat.Deps$nb_C1 / (dat.Deps$nb_C1 + dat.Deps$nb_C0), na.rm = TRUE))
+for(dep in unique.noNA(dat.Deps$departement)){
+  dat &lt;- dat.Deps[dat.Deps$departement == dep, ]
+  plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0(&quot;L452R, &quot;, dep), ymax = ymax)
+}</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-20-1.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-2.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-3.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-4.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-5.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-6.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-7.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-8.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-9.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-10.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-11.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-12.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-13.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-14.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-15.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-16.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-17.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-18.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-19.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-20.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-21.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-22.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-23.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-24.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-25.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-26.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-27.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-28.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-29.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-30.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-31.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-32.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-33.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-34.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-35.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-36.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-37.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-38.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-39.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-40.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-41.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-42.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-43.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-44.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-45.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-46.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-47.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-48.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-49.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-50.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-51.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-52.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-53.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-54.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-55.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-56.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-57.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-58.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-59.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-60.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-61.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-62.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-63.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-64.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-65.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-66.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-67.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-68.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-69.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-70.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-71.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-72.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-73.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-74.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-75.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-76.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-77.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-78.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-79.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-80.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-81.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-82.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-83.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-84.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-85.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-86.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-87.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-88.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-89.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-90.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-91.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-92.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-93.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-94.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-95.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-96.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-97.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-98.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-99.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-100.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-20-101.png" width="672" /></p>
+</div>
+</div>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

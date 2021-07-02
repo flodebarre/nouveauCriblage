@@ -1,0 +1,291 @@
+---
+title: "Mutations"
+author: "FD"
+output: 
+  html_document: 
+      code_folding: hide
+      toc: TRUE
+      toc_float: TRUE
+      self_contained: no
+editor_options:
+  chunk_output_type: console
+---
+
+```{r, eval=FALSE}
+rm(list = ls()) # I don't care what you think
+for(i in dev.list()) dev.off()
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Source of the data:  
+<https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/>
+
+# Initializations
+
+```{r}
+library(RColorBrewer)
+colMut <- brewer.pal(n = 8, name = "Dark2")
+
+col484K <- colMut[1]
+col484Q <- colMut[2]
+col452R <- colMut[3]
+colTotCrib <- colMut[8]
+colTot <- colMut[7]
+```
+
+```{r}
+unique.noNA <- function(x){
+  unique(x[!is.na(x)])
+}
+```
+
+# Load data 
+
+## Test data
+
+```{r}
+URL_Deps <- "https://www.data.gouv.fr/fr/datasets/r/4d3e5a8b-9649-4c41-86ec-5420eb6b530c"
+URL_Regions <- "https://www.data.gouv.fr/fr/datasets/r/5ff0cad6-f150-47ea-a4e0-57e354c1b2a4"
+URL_France <- "https://www.data.gouv.fr/fr/datasets/r/848debc4-0e42-4e3b-a176-afc285ed5401"
+```
+
+Links do not work because of redirection; replace by proper link
+
+```{r}
+URL_Deps <- "https://static.data.gouv.fr/resources/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/20210701-115629/sp-mutations-7j.csv"
+
+URL_Regions <- "https://static.data.gouv.fr/resources/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/20210701-115557/sp-mutations-7j.csv"
+
+URL_France <- "https://static.data.gouv.fr/resources/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/20210701-114500/sp-mutations-7j.csv"
+```
+
+
+```{r}
+# Download files from repo
+system(paste0("curl ", URL_France, " -o ../data/muts_France.csv"))
+system(paste0("curl ", URL_Regions, " -o ../data/muts_Regions.csv"))
+system(paste0("curl ", URL_Deps, " -o ../data/muts_Deps.csv"))
+
+
+dat.France <- read.csv("../data/muts_France.csv", sep = ";", stringsAsFactors = FALSE)
+dat.Regions <- read.csv("../data/muts_Regions.csv", sep = ";", stringsAsFactors = FALSE)
+dat.Deps <- read.csv("../data/muts_Deps.csv", sep = ";", stringsAsFactors = FALSE)
+```
+
+
+## Geographic data
+
+### Regions 
+
+```{r}
+# Codes regions
+URL <- "https://www.data.gouv.fr/en/datasets/r/34fc7b52-ef11-4ab0-bc16-e1aae5c942e7"
+dataFile <- "../data/coderegions.csv"
+download.file(URL, dataFile)
+codesRegions <- read.csv(dataFile, sep = ",", stringsAsFactors = FALSE)
+
+# Turn into dictionary
+regs <- codesRegions$nom_region
+names(regs) <- as.character(codesRegions$code_region)
+```
+
+```{r}
+# Add region name
+dat.Regions$reg_name <- regs[as.character(dat.Regions$reg)]
+
+unique(dat.Regions$reg_name)
+unique(dat.Regions[which(is.na(dat.Regions$reg_name)), "reg"])
+
+
+```
+
+
+### Departments
+
+```{r}
+# Add name
+deps <- read.csv("../data/departement2020.csv", stringsAsFactors = FALSE)
+# Turn into dictionnary
+dps <- deps$libelle
+names(dps) <- as.character(deps$dep)
+```
+
+```{r}
+dat.Deps$departement <- dps[as.character(dat.Deps$dep)]
+
+unique(dat.Deps$departement)
+
+unique(dat.Deps[which(is.na(dat.Deps$departement)), "dep"])
+
+# 977 Saint-Barthélemy, 978 Saint-Martin
+```
+
+## Clean data
+
+```{r}
+# Format date
+dat.France$date1 <- as.Date(substring(dat.France$semaine, 1, 10))
+dat.France$date2 <- as.Date(substring(dat.France$semaine, 12, 21))
+# Rewrite time as days since beginning of the data
+dat.France$time <- dat.France$date2 - min(dat.France$date2)
+```
+
+
+```{r}
+# Format date
+dat.Regions$date1 <- as.Date(substring(dat.Regions$semaine, 1, 10))
+dat.Regions$date2 <- as.Date(substring(dat.Regions$semaine, 12, 21))
+# Rewrite time as days since beginning of the data
+dat.Regions$time <- dat.Regions$date2 - min(dat.Regions$date2)
+```
+
+
+```{r}
+# Format date
+dat.Deps$date1 <- as.Date(substring(dat.Deps$semaine, 1, 10))
+dat.Deps$date2 <- as.Date(substring(dat.Deps$semaine, 12, 21))
+# Rewrite time as days since beginning of the data
+dat.Deps$time <- dat.Deps$date2 - min(dat.Deps$date2)
+```
+
+
+## Consistency checks 
+
+```{r}
+
+testDat <- function(dat){
+  # Check number of genotypied tests
+  testTotA <- sum(dat$nb_crib != (dat$nb_A0+ dat$nb_A1))
+  testTotB <- sum(dat$nb_crib != (dat$nb_B0+ dat$nb_B1))
+  testTotC <- sum(dat$nb_crib != (dat$nb_C0+ dat$nb_C1))
+  
+  # Test proportions of positive genotyping tests
+  # nb of digits in the result varies across datasets
+  if(all(dat$tx_A1 == round(dat$tx_A1, 1))){nDigits <- 1}else{nDigits <- 2}
+  testA <- sum(dat$tx_A1 != round(dat$nb_A1 / (dat$nb_A0 + dat$nb_A1)*100, nDigits), na.rm = TRUE)
+  testB <- sum(dat$tx_B1 != round(dat$nb_B1 / (dat$nb_B0 + dat$nb_B1)*100, nDigits), na.rm = TRUE)
+  testC <- sum(dat$tx_C1 != round(dat$nb_C1 / (dat$nb_C0 + dat$nb_C1)*100, nDigits), na.rm = TRUE)
+  
+  testCrib <- sum(round(dat$tx_crib / 100 * dat$nb_pos) != round(dat$nb_crib))
+  
+  # Return outcome
+  c(nrow(dat), testCrib, testTotA, testTotB, testTotB, testA, testB, testC)
+}
+
+testDat(dat.France)
+testDat(dat.Regions)
+testDat(dat.Deps)
+```
+
+# Plots 
+
+## Numbers of tests
+
+```{r}
+plotNbCrib <- function(dat){
+  par(las = 1)
+  par(mar = c(4, 4, 3, 4))
+  plot(as.Date(dat$date2), dat$nb_pos, ylim = c(0, 1.05*max(dat$nb_pos, na.rm = TRUE)), yaxs = "i", 
+       type = "o", pch = 16, col = colTot, frame.plot = FALSE, 
+       xlab = "date", ylab = "")
+  
+  lines(as.Date(dat$date2), dat$nb_crib, type = "o", pch = 16, col = colTotCrib)
+  
+  legend(x = "topright", legend = c("Nb tests positifs", "Nb tests criblés", "Nb tests interprétables E484K", "Nb tests interprétables E484Q", "Nb tests interprétables L452R"), 
+         col = c(colTot, colTotCrib, col484K, col484Q, col452R), 
+         pch = 16, lty = 1, box.col = gray(0, 0), bty = "n")
+  
+  lines(as.Date(dat$date2), dat$nb_A0 + dat$nb_A1, type = "o", pch = 16, col = col484K)
+  lines(as.Date(dat$date2), dat$nb_B0 + dat$nb_B1, type = "o", pch = 16, col = col484Q)
+  lines(as.Date(dat$date2), dat$nb_C0 + dat$nb_C1, type = "o", pch = 16, col = col452R)
+  
+  axis(4)
+}
+```
+
+
+```{r}
+plotNbCrib(dat.France)
+title(main = "France")
+
+for(reg in unique.noNA(dat.Regions$reg_name)){
+  dat <- dat.Regions[dat.Regions$reg_name == reg, ]
+  plotNbCrib(dat)
+  title(main = reg)
+}
+```
+
+
+## Proportions
+
+```{r}
+plotMut <- function(time, test0, test1, col, thetit, ymax = 0.5){
+  n <- test1 + test0
+  p <- test1 / (n)
+  
+  # Computation of the confidence interval
+  deltaItv <- 1.96 * sqrt(p * (1-p) / n)
+  keepPts <- !is.na(deltaItv) 
+  # Remove points for which the itv cannot be computed
+  deltaItv <- deltaItv[keepPts]
+  pp <- p[keepPts]
+
+  par(mar = c(5, 4, 4, 4))
+  par(las = 1)
+  plot(as.Date(time), p, ylim = c(0, ymax), frame.plot = FALSE, 
+     xlab = "", ylab = "p", yaxs = "i", xaxs = "i", 
+     type = "o", col = col, pch = 16)
+mtext("  Parmi les n(t) tests interprétables recherchant la mutation
+  Intervalle de confiance binomial sur ce nombre de tests n(t)", side = 3, cex = 0.6, adj = 0, line = 0)
+mtext("date", line = 2, side = 1)  
+  axis(4)
+  xx <- base::as.Date(time)[keepPts]
+  polygon(x = c(xx, rev(xx), xx[1]), y = c(pp + deltaItv, rev(pp - deltaItv), (pp + deltaItv)[1]), border = NA, col = adjustcolor(col, alpha.f = 0.3))
+  
+  mtext("Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
+Code : https://github.com/flodebarre/nouveauCriblage", side = 1, line = 3.5, cex = 0.7, col = gray(0.5), adj = 0)
+
+  title(main = thetit)
+}
+```
+
+### France 
+
+```{r}
+plotMut(dat.France$date2, dat.France$nb_A0, dat.France$nb_A1, col = col484K, thetit = "E484K, France")
+plotMut(dat.France$date2, dat.France$nb_B0, dat.France$nb_B1, col = col484Q, thetit = "E484Q, France")
+plotMut(dat.France$date2, dat.France$nb_C0, dat.France$nb_C1, col = col452R, thetit = "L452R, France")
+```
+
+### Regions 
+
+```{r}
+for(reg in unique.noNA(dat.Regions$reg_name)){
+  dat <- dat.Regions[dat.Regions$reg_name == reg, ]
+  plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", reg))
+}
+
+```
+
+### Departements
+
+```{r}
+ymax <- max(1, 1.05*max(dat.Deps$nb_C1 / (dat.Deps$nb_C1 + dat.Deps$nb_C0), na.rm = TRUE))
+for(dep in unique.noNA(dat.Deps$departement)){
+  dat <- dat.Deps[dat.Deps$departement == dep, ]
+  plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", dep), ymax = ymax)
+}
+```
+
+# Other
+
+```{r}
+dat <- dat.Deps[dat.Deps$departement == "Somme", ]
+  plotNbCrib(dat)
+  title("Somme")
+```
+

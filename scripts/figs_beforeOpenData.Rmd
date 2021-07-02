@@ -23,7 +23,7 @@ setwd("scripts/")
 # Load data
 
 ```{r}
-dat <- read.csv("../nouveauCriblage.csv", stringsAsFactors = FALSE)
+dat <- read.csv("../data/nouveauCriblage.csv", stringsAsFactors = FALSE)
 ```
 
 ## Clean data 
