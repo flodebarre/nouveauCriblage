@@ -451,22 +451,25 @@ testDat(dat.France)</code></pre>
 <h1>Plots</h1>
 <div id="numbers-of-tests" class="section level2">
 <h2>Numbers of tests</h2>
-<pre class="r"><code>plotNbCrib &lt;- function(dat){
+<pre class="r"><code>plotNbCrib &lt;- function(dat, quot = TRUE){
+  # dat: dataset to be plotted
+  # quot: boolean to decide whether to plot the daily values (averaged over 7 days) [TRUE], or the sum over the last 7 days [FALSE]
+  if(quot){denom &lt;- 7}else{denom &lt;- 1}
   par(las = 1)
   par(mar = c(4, 4, 3, 4))
-  plot(as.Date(dat$date2), dat$nb_pos, ylim = c(0, 1.05*max(dat$nb_pos, na.rm = TRUE)), yaxs = &quot;i&quot;, 
+  plot(as.Date(dat$date2), dat$nb_pos / denom, ylim = c(0, 1.05*max(dat$nb_pos / denom, na.rm = TRUE)), yaxs = &quot;i&quot;, 
        type = &quot;o&quot;, pch = 16, col = colTot, frame.plot = FALSE, 
        xlab = &quot;date&quot;, ylab = &quot;&quot;)
   
-  lines(as.Date(dat$date2), dat$nb_crib, type = &quot;o&quot;, pch = 16, col = colTotCrib)
+  lines(as.Date(dat$date2), dat$nb_crib / denom, type = &quot;o&quot;, pch = 16, col = colTotCrib)
   
   legend(x = &quot;topright&quot;, legend = c(&quot;Nb tests positifs&quot;, &quot;Nb tests criblés&quot;, &quot;Nb tests interprétables E484K&quot;, &quot;Nb tests interprétables E484Q&quot;, &quot;Nb tests interprétables L452R&quot;), 
          col = c(colTot, colTotCrib, col484K, col484Q, col452R), 
          pch = 16, lty = 1, box.col = gray(0, 0), bty = &quot;n&quot;)
   
-  lines(as.Date(dat$date2), dat$nb_A0 + dat$nb_A1, type = &quot;o&quot;, pch = 16, col = col484K)
-  lines(as.Date(dat$date2), dat$nb_B0 + dat$nb_B1, type = &quot;o&quot;, pch = 16, col = col484Q)
-  lines(as.Date(dat$date2), dat$nb_C0 + dat$nb_C1, type = &quot;o&quot;, pch = 16, col = col452R)
+  lines(as.Date(dat$date2), (dat$nb_A0 + dat$nb_A1) / denom, type = &quot;o&quot;, pch = 16, col = col484K)
+  lines(as.Date(dat$date2), (dat$nb_B0 + dat$nb_B1) / denom, type = &quot;o&quot;, pch = 16, col = col484Q)
+  lines(as.Date(dat$date2), (dat$nb_C0 + dat$nb_C1) / denom, type = &quot;o&quot;, pch = 16, col = col452R)
   
   axis(4)
 }</code></pre>
@@ -482,9 +485,13 @@ title(main = &quot;France&quot;)</code></pre>
 </div>
 <div id="proportions" class="section level2">
 <h2>Proportions</h2>
-<pre class="r"><code>plotMut &lt;- function(time, test0, test1, col, thetit, ymax = 0.5){
-  n &lt;- test1 + test0
-  p &lt;- test1 / (n)
+<pre class="r"><code>plotMut &lt;- function(time, test0, test1, col, thetit, ymax = 0.5, quot = TRUE){
+  # dat: dataset to be plotted
+  # quot: boolean to decide whether to plot the daily values (averaged over 7 days) [TRUE], or the sum over the last 7 days [FALSE]
+  
+  if(quot){denom &lt;- 7}else{denom &lt;- 1}
+  n &lt;- (test1 + test0) / denom
+  p &lt;- test1 / (test1 + test0)
   
   # Computation of the confidence interval
   deltaItv &lt;- 1.96 * sqrt(p * (1-p) / n)
@@ -530,7 +537,7 @@ Code : https://github.com/flodebarre/nouveauCriblage&quot;, side = 1, line = 3.5
 <div id="departements" class="section level3">
 <h3>Departements</h3>
 <pre class="r"><code>ymax &lt;- max(1, 1.05*max(dat.Deps$nb_C1 / (dat.Deps$nb_C1 + dat.Deps$nb_C0), na.rm = TRUE))
-for(dep in unique.noNA(dat.Deps$departement)){
+for(dep in sort(unique.noNA(dat.Deps$departement))){
   dat &lt;- dat.Deps[dat.Deps$departement == dep, ]
   plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0(&quot;L452R, &quot;, dep), ymax = ymax)
 }</code></pre>
