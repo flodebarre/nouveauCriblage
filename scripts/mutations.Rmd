@@ -77,6 +77,7 @@ download.file(URL_Deps,
 dat.France <- read.csv("../data/muts_France.csv", sep = ";", stringsAsFactors = FALSE)
 dat.Regions <- read.csv("../data/muts_Regions.csv", sep = ";", stringsAsFactors = FALSE)
 dat.Deps <- read.csv("../data/muts_Deps.csv", sep = ";", stringsAsFactors = FALSE)
+
 ```
 
 
@@ -273,7 +274,7 @@ plotMut(dat.France$date2, dat.France$nb_C0, dat.France$nb_C1, col = col452R, the
 
 ### Regions 
 
-```{r}
+```{r eval = FALSE}
 for(reg in unique.noNA(dat.Regions$reg_name)){
   dat <- dat.Regions[dat.Regions$reg_name == reg, ]
   plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", reg))
@@ -285,6 +286,9 @@ for(reg in unique.noNA(dat.Regions$reg_name)){
 
 ```{r}
 ymax <- max(1, 1.05*max(dat.Deps$nb_C1 / (dat.Deps$nb_C1 + dat.Deps$nb_C0), na.rm = TRUE))
+```
+
+```{r eval = FALSE}
 for(dep in sort(unique.noNA(dat.Deps$departement))){
   dat <- dat.Deps[dat.Deps$departement == dep, ]
   plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", dep), ymax = ymax)
@@ -351,7 +355,7 @@ drawRec <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thrn
 }
 ```
 
-```{r, fig.width = 10, fig.height = 12}
+```{r, fig.width = 7, fig.height = 9}
 geog <- read.csv("../data/position_deps.csv", header = FALSE)
 names(geog) <- c("x", "y", "dep", "shortName")
 rr <- 2 # Rounding factor
@@ -366,7 +370,7 @@ par(mar = rep(0.2, 4) + c(2, 0, 2, 0))
 plot(c(round(geog$x, rr), round(geog$x, rr) + ddr[1]), c(round(geog$y, rr), round(geog$y, rr) + ddr[2]), type = "n", asp = 1, axes = FALSE, xlab = "", ylab = "")
 
 # Add titles of the plots
-text(x = round(geog$x, rr) + ddr[1]/2, y = round(geog$y, rr) + ddr[2], labels = paste0(geog$shortName, "(", geog$dep, ")"), bg = "white", adj = c(0.5, -0.4), cex = 0.375)
+text(x = round(geog$x, rr) + ddr[1]/2, y = round(geog$y, rr) + ddr[2], labels = paste0(geog$shortName, "(", geog$dep, ")"), bg = "white", adj = c(0.5, -0.4), cex = 0.45)
 
 for(i in seq_len(nrow(geog))){
   # Draw rectangle
@@ -400,18 +404,18 @@ text(x = xP, y = yP + ddr[2], adj = c(1, 0.5), labels = "100% ", cex = cexLeg)
 
 text(x = c(xP, xP + ddr[1]), y = c(yP, yP), adj = c(0.5, 1.5), labels = c(minDay, maxDay), cex = cexLeg)
 
-title("Proportion de L452R par département")
+title("Proportion de L452R")
 
   mtext("  @flodebarre
   Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
   Code : https://github.com/flodebarre/nouveauCriblage
-  Idée carte : Les Decodeurs, Le Monde https://tinyurl.com/carteFRDecLM", side = 1, line = 1, cex = 0.5, col = gray(0.5), adj = 0)
+  Idée carte : Les Decodeurs, Le Monde https://tinyurl.com/carteFRDecLM", side = 1, line = 1, cex = 0.6, col = gray(0.5), adj = 0)
   
-cexLegend <- 0.5
+cexLegend <- 0.6
 legend("topright", legend = c("Proportion L452R, < 50% le dernier jour", "≥ 50% le dernier jour"), cex = cexLegend, bty = "n", col = c(col452R, col452R.complement), lty = 1, pch = 16)
 legend("topright", legend = c("", paste0("Données tracées si au moins ", 100*thrp, "% des cas criblés
-et au moins ", thrntot, " cas sur la semaine. 
-Itv confiance sur nb cas moyen 7 derniers jours.")), cex = cexLegend, bty = "n")
+et au moins ", thrntot, " criblages sur la semaine. 
+Itv confiance sur nb crib. moyen 7 derniers jours.")), cex = cexLegend, bty = "n")
 ```
 
 # Other

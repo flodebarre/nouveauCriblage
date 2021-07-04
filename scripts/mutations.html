@@ -272,7 +272,9 @@ col484K &lt;- colMut[1]
 col484Q &lt;- colMut[2]
 col452R &lt;- colMut[3]
 colTotCrib &lt;- colMut[8]
-colTot &lt;- colMut[7]</code></pre>
+colTot &lt;- colMut[7]
+
+col452R.complement &lt;- &quot;#b37570&quot;</code></pre>
 <pre class="r"><code>unique.noNA &lt;- function(x){
   unique(x[!is.na(x)])
 }</code></pre>
@@ -440,11 +442,11 @@ dat.Deps$time &lt;- dat.Deps$date2 - min(dat.Deps$date2)</code></pre>
 }
 
 testDat(dat.France)</code></pre>
-<pre><code>## [1] 25 23 25 25 25  0  0  0</code></pre>
+<pre><code>## [1] 26 23 26 26 26  0  0  0</code></pre>
 <pre class="r"><code>testDat(dat.Regions)</code></pre>
-<pre><code>## [1] 500 113 439 449 449   0   0   0</code></pre>
+<pre><code>## [1] 520 122 455 465 465   0   0   0</code></pre>
 <pre class="r"><code>testDat(dat.Deps)</code></pre>
-<pre><code>## [1] 2575    4 2399 2467 2467    0    0    0</code></pre>
+<pre><code>## [1] 2678    4 2492 2560 2560    0    0    0</code></pre>
 </div>
 </div>
 <div id="plots" class="section level1">
@@ -532,23 +534,74 @@ Code : https://github.com/flodebarre/nouveauCriblage&quot;, side = 1, line = 3.5
   dat &lt;- dat.Regions[dat.Regions$reg_name == reg, ]
   plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0(&quot;L452R, &quot;, reg))
 }</code></pre>
-<p><img src="mutations_files/figure-html/unnamed-chunk-18-1.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-2.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-3.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-4.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-5.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-6.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-7.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-8.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-9.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-10.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-11.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-12.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-13.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-14.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-15.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-16.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-17.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-18-18.png" width="672" /></p>
 </div>
 <div id="departements" class="section level3">
 <h3>Departements</h3>
-<pre class="r"><code>ymax &lt;- max(1, 1.05*max(dat.Deps$nb_C1 / (dat.Deps$nb_C1 + dat.Deps$nb_C0), na.rm = TRUE))
-for(dep in sort(unique.noNA(dat.Deps$departement))){
+<pre class="r"><code>ymax &lt;- max(1, 1.05*max(dat.Deps$nb_C1 / (dat.Deps$nb_C1 + dat.Deps$nb_C0), na.rm = TRUE))</code></pre>
+<pre class="r"><code>for(dep in sort(unique.noNA(dat.Deps$departement))){
   dat &lt;- dat.Deps[dat.Deps$departement == dep, ]
   plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0(&quot;L452R, &quot;, dep), ymax = ymax)
 }</code></pre>
-<p><img src="mutations_files/figure-html/unnamed-chunk-19-1.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-2.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-3.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-4.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-5.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-6.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-7.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-8.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-9.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-10.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-11.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-12.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-13.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-14.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-15.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-16.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-17.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-18.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-19.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-20.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-21.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-22.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-23.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-24.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-25.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-26.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-27.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-28.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-29.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-30.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-31.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-32.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-33.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-34.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-35.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-36.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-37.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-38.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-39.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-40.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-41.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-42.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-43.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-44.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-45.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-46.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-47.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-48.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-49.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-50.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-51.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-52.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-53.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-54.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-55.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-56.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-57.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-58.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-59.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-60.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-61.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-62.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-63.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-64.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-65.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-66.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-67.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-68.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-69.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-70.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-71.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-72.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-73.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-74.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-75.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-76.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-77.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-78.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-79.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-80.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-81.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-82.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-83.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-84.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-85.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-86.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-87.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-88.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-89.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-90.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-91.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-92.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-93.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-94.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-95.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-96.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-97.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-98.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-99.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-100.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-19-101.png" width="672" /></p>
 </div>
 </div>
 <div id="geographic" class="section level2">
 <h2>Geographic</h2>
-<p>Source idea: <a href="https://www.lemonde.fr/les-decodeurs/article/2020/05/05/coronavirus-age-mortalite-departements-pays-suivez-l-evolution-de-l-epidemie-en-cartes-et-graphiques_6038751_4355770.html">Le Monde map</a></p>
+<p>Source idea map: <a href="https://www.lemonde.fr/les-decodeurs/article/2020/05/05/coronavirus-age-mortalite-departements-pays-suivez-l-evolution-de-l-epidemie-en-cartes-et-graphiques_6038751_4355770.html">Le Monde map</a></p>
+<pre class="r"><code>thrp &lt;- 0.1
+thrntot &lt;- 30
+
+drawRec &lt;- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thrntot/7, colMaj = col452R.complement){
+  # depDat: dataset for this departement
+  # x: x position of the bottom left corner
+  # y: y position of the bottom left corner
+  # dxy: rectangle size c(dx, dy)
+  # col: main color
+  # thr.p: threshold to plot criblage data, minimum proportion of cases
+  # thr.n: threshold in terms of number of tests done
+  
+  relTime &lt;- as.numeric(depDat$time)/max(as.numeric(depDat$time))
+  test0 &lt;- depDat$nb_C0
+  test1 &lt;- depDat$nb_C1
+  
+  denom &lt;- 7
+  n &lt;- (test1 + test0) / denom
+  p &lt;- test1 / (test1 + test0)
+  
+  scale.xy &lt;- function(z, z1, z2){
+    # z has to be between 0 and 1
+    stopifnot(z &gt;= 0 | z &lt;= 1)
+    z1 + (z2 - z1) * z
+  }
+  
+  # Computation of the confidence interval
+  deltaItv &lt;- 1.96 * sqrt(p * (1-p) / n)
+  keepPts &lt;- !is.na(deltaItv) &amp; (depDat$tx_C1/100 &gt;= thr.p) &amp; (n &gt;= thr.n)
+  
+  if(any(keepPts)){
+      # Remove points for which the itv cannot be computed
+  # and point with not enough criblage
+  deltaItv &lt;- deltaItv[keepPts]
+  pp &lt;- p[keepPts]
+  
+  # Color depends on whether main mutation
+  if(pp[length(pp)] &gt; 0.5){
+    thecol &lt;- colMaj
+  }else{
+      thecol &lt;- col
+  }
+
+  lines(scale.xy(relTime[keepPts], x, x + dxy[1]), scale.xy(pp, y, y + dxy[2]), type = &quot;o&quot;, col = thecol, pch = 16, cex = 0.2, lwd = 0.7)
+  
+  xx &lt;- relTime[keepPts]
+  
+  polygon(x = scale.xy(c(xx, rev(xx), xx[1]), x, x + dxy[1]), y = scale.xy(c(sapply(pp + deltaItv, min, 1), 
+                                                                             sapply(rev(pp - deltaItv), max, 0), 
+                                                                             sapply((pp + deltaItv)[1], min, 1)), y, y + dxy[2]), border = NA, col = adjustcolor(thecol, alpha.f = 0.3))
+  }
+  
+}</code></pre>
 <pre class="r"><code>geog &lt;- read.csv(&quot;../data/position_deps.csv&quot;, header = FALSE)
-names(geog) &lt;- c(&quot;x&quot;, &quot;y&quot;, &quot;dep&quot;)
+names(geog) &lt;- c(&quot;x&quot;, &quot;y&quot;, &quot;dep&quot;, &quot;shortName&quot;)
 rr &lt;- 2 # Rounding factor
 
 d1 &lt;- c(5.367367157581877, 1.008996513422371)
@@ -556,15 +609,58 @@ d2 &lt;- c(6.203498009030808, 1.7266142092327605)
 dd &lt;- d2 - d1
 ddr &lt;- round(dd,rr)
 
-par(mar = rep(0.2, 4) + c(0, 0, 2, 0))
+par(mar = rep(0.2, 4) + c(2, 0, 2, 0))
+# Initialize plot with rect positions
 plot(c(round(geog$x, rr), round(geog$x, rr) + ddr[1]), c(round(geog$y, rr), round(geog$y, rr) + ddr[2]), type = &quot;n&quot;, asp = 1, axes = FALSE, xlab = &quot;&quot;, ylab = &quot;&quot;)
-text(x = round(geog$x, rr) + ddr[1]/2, y = round(geog$y, rr) + ddr[2], labels = geog$dep, bg = &quot;white&quot;, adj = c(0.5, -0.1), cex = 0.6)
+
+# Add titles of the plots
+text(x = round(geog$x, rr) + ddr[1]/2, y = round(geog$y, rr) + ddr[2], labels = paste0(geog$shortName, &quot;(&quot;, geog$dep, &quot;)&quot;), bg = &quot;white&quot;, adj = c(0.5, -0.4), cex = 0.45)
 
 for(i in seq_len(nrow(geog))){
-  rect(xleft = round(geog$x, rr), ybottom = round(geog$y, rr), xright = round(geog$x, rr) + ddr[1], ytop = round(geog$y, rr) + ddr[2])
+  # Draw rectangle
+  rect(xleft = round(geog[i, &quot;x&quot;], rr), ybottom = round(geog[i, &quot;y&quot;], rr), xright = round(geog[i, &quot;x&quot;], rr) + ddr[1], ytop = round(geog[i, &quot;y&quot;], rr) + ddr[2], lwd = 0.5, border = gray(0.6))
+  
+  # Select departement data
+  depDat &lt;- dat.Deps[which(dat.Deps$dep == geog[i, &quot;dep&quot;]), ]
+  
+  # Horizontal line for 0.5
+  lines(c(round(geog[i, &quot;x&quot;], rr), round(geog[i, &quot;x&quot;], rr) + ddr[1]), rep(round(geog[i, &quot;y&quot;], rr) + ddr[2]/2, 2), lty = 1, col = gray(0.6), lwd = 0.5)
+  
+  # Draw curve
+  drawRec(depDat, x = round(geog[i, &quot;x&quot;], rr), y = round(geog[i, &quot;y&quot;], rr), dxy = ddr, col = col452R)
 
-}</code></pre>
-<p><img src="mutations_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
+#    readline(prompt=&quot;Press [enter] to continue&quot;)
+
+}
+
+
+#drawRec(depDat, x = 5.73820184045573, y = 7.01837788404748, dxy = ddr, col = col452R)
+
+minDay &lt;- format(min(dat.Deps$date2), &quot;%d %b&quot;)
+maxDay &lt;- format(max(dat.Deps$date2), &quot;%d %b&quot;)
+
+
+xP &lt;- 1.34031283936975
+yP &lt;- 15.0106959818622
+cexLeg &lt;- 0.45
+text(x = xP, y = yP, adj = c(1, 0), labels = &quot;0% &quot;, cex = 0.4)
+text(x = xP, y = yP + ddr[2], adj = c(1, 0.5), labels = &quot;100% &quot;, cex = cexLeg)
+
+text(x = c(xP, xP + ddr[1]), y = c(yP, yP), adj = c(0.5, 1.5), labels = c(minDay, maxDay), cex = cexLeg)
+
+title(&quot;Proportion de L452R&quot;)
+
+  mtext(&quot;  @flodebarre
+  Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
+  Code : https://github.com/flodebarre/nouveauCriblage
+  Idée carte : Les Decodeurs, Le Monde https://tinyurl.com/carteFRDecLM&quot;, side = 1, line = 1, cex = 0.6, col = gray(0.5), adj = 0)
+  
+cexLegend &lt;- 0.6
+legend(&quot;topright&quot;, legend = c(&quot;Proportion L452R, &lt; 50% le dernier jour&quot;, &quot;≥ 50% le dernier jour&quot;), cex = cexLegend, bty = &quot;n&quot;, col = c(col452R, col452R.complement), lty = 1, pch = 16)
+legend(&quot;topright&quot;, legend = c(&quot;&quot;, paste0(&quot;Données tracées si au moins &quot;, 100*thrp, &quot;% des cas criblés
+et au moins &quot;, thrntot, &quot; criblages sur la semaine. 
+Itv confiance sur nb crib. moyen 7 derniers jours.&quot;)), cex = cexLegend, bty = &quot;n&quot;)</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
 </div>
 </div>
 <div id="other" class="section level1">
@@ -572,9 +668,9 @@ for(i in seq_len(nrow(geog))){
 <pre class="r"><code>dat &lt;- dat.Deps[dat.Deps$departement == &quot;Somme&quot;, ]
   plotNbCrib(dat)
   title(&quot;Somme&quot;)</code></pre>
-<p><img src="mutations_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
+<p><img src="mutations_files/figure-html/unnamed-chunk-23-1.png" width="672" /></p>
 <pre class="r"><code>    plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0(&quot;L452R, &quot;, &quot;Somme&quot;), ymax = ymax)</code></pre>
-<p><img src="mutations_files/figure-html/unnamed-chunk-21-2.png" width="672" /></p>
+<p><img src="mutations_files/figure-html/unnamed-chunk-23-2.png" width="672" /></p>
 </div>
 
 
