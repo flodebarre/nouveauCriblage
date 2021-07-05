@@ -297,7 +297,7 @@ for(dep in sort(unique.noNA(dat.Deps$departement))){
 
 ## Geographic
 
-Source idea map: [Le Monde map](https://www.lemonde.fr/les-decodeurs/article/2020/05/05/coronavirus-age-mortalite-departements-pays-suivez-l-evolution-de-l-epidemie-en-cartes-et-graphiques_6038751_4355770.html)
+Source idea map: [Le Monde map](https://www.lemonde.fr/les-decodeurs/article/2020/05/05/coronavirus-age-mortalite-departements-pays-suivez-l-evolution-de-l-epidemie-en-cartes-et-graphiques_6038751_4355770.html) [| archived](https://archive.is/eJ68m)
 
 ```{r}
 thrp <- 0.1
