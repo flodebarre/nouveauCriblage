@@ -1,0 +1,267 @@
+---
+title: "Augmentation cas et Proportion variant"
+author: "FD"
+output: 
+  html_document: 
+      code_folding: hide
+      toc: TRUE
+      toc_float: TRUE
+      self_contained: no
+editor_options:
+  chunk_output_type: console
+---
+
+```{r, eval=FALSE}
+rm(list = ls()) # I don't care what you think
+for(i in dev.list()) dev.off()
+setwd("scripts/")
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Source of the data:  
+<https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/>
+
+# Initializations
+
+```{r}
+library(RColorBrewer)
+colMut <- brewer.pal(n = 8, name = "Dark2")
+
+col484K <- colMut[1]
+col484Q <- colMut[2]
+col452R <- colMut[3]
+colTotCrib <- colMut[8]
+colTot <- colMut[7]
+
+col452R.complement <- "#b37570"
+```
+
+```{r}
+unique.noNA <- function(x){
+  unique(x[!is.na(x)])
+}
+```
+
+
+# Theory
+
+```{r}
+r0 <- -0.08 # Growth rate old variant
+deltar <- 0.15 # Difference in growth rate
+r1 <- r0 + deltar # Growth rate new variant
+
+# Initial values
+n0.0 <- 2000
+n1.0 <- 10
+
+# Time values  
+time <- seq(0, 75, by = 1)
+nt <- length(time)
+
+# Exponential growth/decline with parameter r
+n0 <- n0.0 * exp(r0*time)
+n1 <- n1.0 * exp(r1*time)
+
+# Compute proportion cases new variant
+p <- n1/(n0 + n1)
+# total number of cases
+n <- n0 + n1
+```
+
+
+```{r, fig.height=11}
+par(mfrow = c(3, 1))
+cols = c(brewer.pal(3, "Dark2")[1:2], gray(0.5))
+names(cols) <- c("old", "new", "tot")
+plot(p, xlab = "Time", ylab = "Prop. new variant", type = "l", frame.plot = FALSE, col = cols["new"], main = "Proportion new variant over time")
+
+plot(n0+n1, ylim = c(1, max(c(n0+n1))), log = "y", 
+     xlab = "Time", ylab = "Nb Cases", col = cols["tot"], frame.plot = FALSE, type = "l", lty = 2, 
+     main = "Nb of cases, old, new and total (log scale)")
+lines(n0, col = cols["old"])
+lines(n1, col = cols["new"])
+
+# Relative increase over one week
+augm7 <- c(rep(NA, 7), (n[8:nt] - n[1:(nt-7)])/n[1:(nt-7)])
+
+plot(p, augm7, 
+     xlab = "Prop. new variant", ylab = "Rel change in nb of cases", 
+     type = "l", col = cols["new"], frame.plot = FALSE, main = "Relative change in nb of cases as function of prop. new variant")
+abline(h = 0, lty = 3)
+```
+
+
+# Load data 
+
+## Test data
+
+```{r}
+URL_Deps <- "https://www.data.gouv.fr/fr/datasets/r/4d3e5a8b-9649-4c41-86ec-5420eb6b530c"
+URL_Regions <- "https://www.data.gouv.fr/fr/datasets/r/5ff0cad6-f150-47ea-a4e0-57e354c1b2a4"
+URL_France <- "https://www.data.gouv.fr/fr/datasets/r/848debc4-0e42-4e3b-a176-afc285ed5401"
+```
+
+
+```{r}
+# Download files from repo
+# Need to use extra option to follow the redirection
+download.file(URL_France, 
+              destfile="../data/muts_France.csv",
+              method="curl",
+              extra='-L')
+download.file(URL_Regions, 
+              destfile="../data/muts_Regions.csv",
+              method="curl",
+              extra='-L')
+download.file(URL_Deps, 
+              destfile="../data/muts_Deps.csv",
+              method="curl",
+              extra='-L')
+
+
+dat.France <- read.csv("../data/muts_France.csv", sep = ";", stringsAsFactors = FALSE)
+dat.Regions <- read.csv("../data/muts_Regions.csv", sep = ";", stringsAsFactors = FALSE)
+dat.Deps <- read.csv("../data/muts_Deps.csv", sep = ";", stringsAsFactors = FALSE)
+
+```
+
+
+## Geographic data
+
+### Regions 
+
+```{r}
+# Codes regions
+URL <- "https://www.data.gouv.fr/en/datasets/r/34fc7b52-ef11-4ab0-bc16-e1aae5c942e7"
+dataFile <- "../data/coderegions.csv"
+download.file(URL, dataFile)
+codesRegions <- read.csv(dataFile, sep = ",", stringsAsFactors = FALSE)
+
+# Turn into dictionary
+regs <- codesRegions$nom_region
+names(regs) <- as.character(codesRegions$code_region)
+```
+
+```{r, results = 'hide'}
+# Add region name
+dat.Regions$reg_name <- regs[as.character(dat.Regions$reg)]
+
+unique(dat.Regions$reg_name)
+unique(dat.Regions[which(is.na(dat.Regions$reg_name)), "reg"])
+
+
+```
+
+
+### Departments
+
+```{r, results = 'hide'}
+# Add name
+deps <- read.csv("../data/departement2020.csv", stringsAsFactors = FALSE)
+# Turn into dictionnary
+dps <- deps$libelle
+names(dps) <- as.character(deps$dep)
+```
+
+```{r, results = 'hide'}
+dat.Deps$departement <- dps[as.character(dat.Deps$dep)]
+
+unique(dat.Deps$departement)
+
+unique(dat.Deps[which(is.na(dat.Deps$departement)), "dep"])
+
+# 977 Saint-Barthélemy, 978 Saint-Martin
+```
+
+## Clean data
+
+```{r}
+# Format date
+dat.France$date1 <- as.Date(substring(dat.France$semaine, 1, 10))
+dat.France$date2 <- as.Date(substring(dat.France$semaine, 12, 21))
+# Rewrite time as days since beginning of the data
+dat.France$time <- dat.France$date2 - min(dat.France$date2)
+```
+
+
+```{r}
+# Format date
+dat.Regions$date1 <- as.Date(substring(dat.Regions$semaine, 1, 10))
+dat.Regions$date2 <- as.Date(substring(dat.Regions$semaine, 12, 21))
+# Rewrite time as days since beginning of the data
+dat.Regions$time <- dat.Regions$date2 - min(dat.Regions$date2)
+```
+
+
+```{r}
+# Format date
+dat.Deps$date1 <- as.Date(substring(dat.Deps$semaine, 1, 10))
+dat.Deps$date2 <- as.Date(substring(dat.Deps$semaine, 12, 21))
+# Rewrite time as days since beginning of the data
+dat.Deps$time <- dat.Deps$date2 - min(dat.Deps$date2)
+```
+
+# SPF-like figure
+
+```{r, results = 'hide'}
+dat.Deps$reldiffCases <- NA # Initialize column
+
+thedep <- unique(dat.Deps$dep)[1]
+
+# Compute relative difference in numbers of cases for each departement
+for(thedep in unique(dat.Deps$dep)){
+  # Indices for the departement
+  inds <- which(dat.Deps$dep == thedep)
+  # Select subdata for the departement
+  sub <- dat.Deps[inds, ]
+  # Check that dates are sorted
+  all(sub$date2 == sort(sub$date2)) 
+  
+  # Compute relative difference in number of cases 7 days ago
+  reldiffCases <- c(rep(NA, 7), (sub[8:nrow(sub), "nb_pos"] - sub[1:(nrow(sub)-7), "nb_pos"])/sub[1:(nrow(sub)-7), "nb_pos"])
+  
+  dat.Deps[inds, "reldiffCases"] <- reldiffCases
+}
+
+# Define departement colors
+colsDeps <- rep(palette(rainbow(length(unique(dat.Deps$dep)))), each = 15)
+colsDeps <- colsDeps[1:length(unique(dat.Deps$dep))]
+names(colsDeps) <- unique(dat.Deps$dep)
+```
+
+
+Figures like SPF: all departments on a given date
+
+```{r}
+thesemaine <- "2021-07-05-2021-07-11"
+inds <- which(dat.Deps$semaine == thesemaine)
+sub <- dat.Deps[inds,]
+# Include only if min 30 pos tests
+sub <- sub[which(sub$nb_pos > 30), ]
+plot(sub$tx_C1, sub$reldiffCases, ylim = c(-0.1, 0.5), 
+     frame.plot = FALSE, pch = 16, col = colsDeps[sub$dep], xlab = "Proportion L452R", ylab = "Augmentation relative nb cas", main = paste0(thesemaine, ", tous deps"))
+abline(h= 0)
+text(sub$tx_C1, sub$reldiffCases, labels = sub$dep, adj = c(0.5, -1), cex = 0.5)
+```
+
+
+```{r}
+for(thedep in c("75", "13", "78", "34")){
+  inds <- which(dat.Deps$dep == thedep)
+  sub <- dat.Deps[inds,]
+  # Include only if min 30 pos tests
+  sub <- sub[which(sub$nb_pos > 30), ]
+  plot(sub$tx_C1, sub$reldiffCases, 
+       xlim = c(0, 100),
+       #ylim = c(-0.1, 0.4), 
+       frame.plot = FALSE, pch = 16, col = colsDeps[thedep],
+       xlab = "Proportion L452R", ylab = "Augmentation relative nb cas", main = paste0("Department ", thedep, ", toutes dates"))
+  abline(h= 0)
+}
+
+```
+

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="FD" />
+
+
+<title>Augmentation cas et Proportion variant</title>
+
+<script src="pourNB_files/header-attrs-2.7/header-attrs.js"></script>
+<script src="pourNB_files/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="pourNB_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="pourNB_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="pourNB_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="pourNB_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="pourNB_files/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="pourNB_files/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="pourNB_files/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="pourNB_files/navigation-1.1/tabsets.js"></script>
+<script src="pourNB_files/navigation-1.1/codefolding.js"></script>
+<link href="pourNB_files/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="pourNB_files/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-sm-12 col-md-4 col-lg-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-sm-12 col-md-8 col-lg-9">
+
+
+
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Augmentation cas et Proportion variant</h1>
+<h4 class="author">FD</h4>
+
+</div>
+
+
+<pre class="r"><code>rm(list = ls()) # I don&#39;t care what you think
+for(i in dev.list()) dev.off()
+setwd(&quot;scripts/&quot;)</code></pre>
+<p>Source of the data:<br />
+<a href="https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/" class="uri">https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/</a></p>
+<div id="initializations" class="section level1">
+<h1>Initializations</h1>
+<pre class="r"><code>library(RColorBrewer)
+colMut &lt;- brewer.pal(n = 8, name = &quot;Dark2&quot;)
+
+col484K &lt;- colMut[1]
+col484Q &lt;- colMut[2]
+col452R &lt;- colMut[3]
+colTotCrib &lt;- colMut[8]
+colTot &lt;- colMut[7]
+
+col452R.complement &lt;- &quot;#b37570&quot;</code></pre>
+<pre class="r"><code>unique.noNA &lt;- function(x){
+  unique(x[!is.na(x)])
+}</code></pre>
+</div>
+<div id="theory" class="section level1">
+<h1>Theory</h1>
+<pre class="r"><code>r0 &lt;- -0.08 # Growth rate old variant
+deltar &lt;- 0.15 # Difference in growth rate
+r1 &lt;- r0 + deltar # Growth rate new variant
+
+# Initial values
+n0.0 &lt;- 2000
+n1.0 &lt;- 10
+
+# Time values  
+time &lt;- seq(0, 75, by = 1)
+nt &lt;- length(time)
+
+# Exponential growth/decline with parameter r
+n0 &lt;- n0.0 * exp(r0*time)
+n1 &lt;- n1.0 * exp(r1*time)
+
+# Compute proportion cases new variant
+p &lt;- n1/(n0 + n1)
+# total number of cases
+n &lt;- n0 + n1</code></pre>
+<pre class="r"><code>par(mfrow = c(3, 1))
+cols = c(brewer.pal(3, &quot;Dark2&quot;)[1:2], gray(0.5))
+names(cols) &lt;- c(&quot;old&quot;, &quot;new&quot;, &quot;tot&quot;)
+plot(p, xlab = &quot;Time&quot;, ylab = &quot;Prop. new variant&quot;, type = &quot;l&quot;, frame.plot = FALSE, col = cols[&quot;new&quot;], main = &quot;Proportion new variant over time&quot;)
+
+plot(n0+n1, ylim = c(1, max(c(n0+n1))), log = &quot;y&quot;, 
+     xlab = &quot;Time&quot;, ylab = &quot;Nb Cases&quot;, col = cols[&quot;tot&quot;], frame.plot = FALSE, type = &quot;l&quot;, lty = 2, 
+     main = &quot;Nb of cases, old, new and total (log scale)&quot;)
+lines(n0, col = cols[&quot;old&quot;])
+lines(n1, col = cols[&quot;new&quot;])
+
+# Relative increase over one week
+augm7 &lt;- c(rep(NA, 7), (n[8:nt] - n[1:(nt-7)])/n[1:(nt-7)])
+
+plot(p, augm7, 
+     xlab = &quot;Prop. new variant&quot;, ylab = &quot;Rel change in nb of cases&quot;, 
+     type = &quot;l&quot;, col = cols[&quot;new&quot;], frame.plot = FALSE, main = &quot;Relative change in nb of cases as function of prop. new variant&quot;)
+abline(h = 0, lty = 3)</code></pre>
+<p><img src="pourNB_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+</div>
+<div id="load-data" class="section level1">
+<h1>Load data</h1>
+<div id="test-data" class="section level2">
+<h2>Test data</h2>
+<pre class="r"><code>URL_Deps &lt;- &quot;https://www.data.gouv.fr/fr/datasets/r/4d3e5a8b-9649-4c41-86ec-5420eb6b530c&quot;
+URL_Regions &lt;- &quot;https://www.data.gouv.fr/fr/datasets/r/5ff0cad6-f150-47ea-a4e0-57e354c1b2a4&quot;
+URL_France &lt;- &quot;https://www.data.gouv.fr/fr/datasets/r/848debc4-0e42-4e3b-a176-afc285ed5401&quot;</code></pre>
+<pre class="r"><code># Download files from repo
+# Need to use extra option to follow the redirection
+download.file(URL_France, 
+              destfile=&quot;../data/muts_France.csv&quot;,
+              method=&quot;curl&quot;,
+              extra=&#39;-L&#39;)
+download.file(URL_Regions, 
+              destfile=&quot;../data/muts_Regions.csv&quot;,
+              method=&quot;curl&quot;,
+              extra=&#39;-L&#39;)
+download.file(URL_Deps, 
+              destfile=&quot;../data/muts_Deps.csv&quot;,
+              method=&quot;curl&quot;,
+              extra=&#39;-L&#39;)
+
+
+dat.France &lt;- read.csv(&quot;../data/muts_France.csv&quot;, sep = &quot;;&quot;, stringsAsFactors = FALSE)
+dat.Regions &lt;- read.csv(&quot;../data/muts_Regions.csv&quot;, sep = &quot;;&quot;, stringsAsFactors = FALSE)
+dat.Deps &lt;- read.csv(&quot;../data/muts_Deps.csv&quot;, sep = &quot;;&quot;, stringsAsFactors = FALSE)</code></pre>
+</div>
+<div id="geographic-data" class="section level2">
+<h2>Geographic data</h2>
+<div id="regions" class="section level3">
+<h3>Regions</h3>
+<pre class="r"><code># Codes regions
+URL &lt;- &quot;https://www.data.gouv.fr/en/datasets/r/34fc7b52-ef11-4ab0-bc16-e1aae5c942e7&quot;
+dataFile &lt;- &quot;../data/coderegions.csv&quot;
+download.file(URL, dataFile)
+codesRegions &lt;- read.csv(dataFile, sep = &quot;,&quot;, stringsAsFactors = FALSE)
+
+# Turn into dictionary
+regs &lt;- codesRegions$nom_region
+names(regs) &lt;- as.character(codesRegions$code_region)</code></pre>
+<pre class="r"><code># Add region name
+dat.Regions$reg_name &lt;- regs[as.character(dat.Regions$reg)]
+
+unique(dat.Regions$reg_name)
+unique(dat.Regions[which(is.na(dat.Regions$reg_name)), &quot;reg&quot;])</code></pre>
+</div>
+<div id="departments" class="section level3">
+<h3>Departments</h3>
+<pre class="r"><code># Add name
+deps &lt;- read.csv(&quot;../data/departement2020.csv&quot;, stringsAsFactors = FALSE)
+# Turn into dictionnary
+dps &lt;- deps$libelle
+names(dps) &lt;- as.character(deps$dep)</code></pre>
+<pre class="r"><code>dat.Deps$departement &lt;- dps[as.character(dat.Deps$dep)]
+
+unique(dat.Deps$departement)
+
+unique(dat.Deps[which(is.na(dat.Deps$departement)), &quot;dep&quot;])
+
+# 977 Saint-Barthélemy, 978 Saint-Martin</code></pre>
+</div>
+</div>
+<div id="clean-data" class="section level2">
+<h2>Clean data</h2>
+<pre class="r"><code># Format date
+dat.France$date1 &lt;- as.Date(substring(dat.France$semaine, 1, 10))
+dat.France$date2 &lt;- as.Date(substring(dat.France$semaine, 12, 21))
+# Rewrite time as days since beginning of the data
+dat.France$time &lt;- dat.France$date2 - min(dat.France$date2)</code></pre>
+<pre class="r"><code># Format date
+dat.Regions$date1 &lt;- as.Date(substring(dat.Regions$semaine, 1, 10))
+dat.Regions$date2 &lt;- as.Date(substring(dat.Regions$semaine, 12, 21))
+# Rewrite time as days since beginning of the data
+dat.Regions$time &lt;- dat.Regions$date2 - min(dat.Regions$date2)</code></pre>
+<pre class="r"><code># Format date
+dat.Deps$date1 &lt;- as.Date(substring(dat.Deps$semaine, 1, 10))
+dat.Deps$date2 &lt;- as.Date(substring(dat.Deps$semaine, 12, 21))
+# Rewrite time as days since beginning of the data
+dat.Deps$time &lt;- dat.Deps$date2 - min(dat.Deps$date2)</code></pre>
+</div>
+</div>
+<div id="spf-like-figure" class="section level1">
+<h1>SPF-like figure</h1>
+<pre class="r"><code>dat.Deps$reldiffCases &lt;- NA # Initialize column
+
+thedep &lt;- unique(dat.Deps$dep)[1]
+
+# Compute relative difference in numbers of cases for each departement
+for(thedep in unique(dat.Deps$dep)){
+  # Indices for the departement
+  inds &lt;- which(dat.Deps$dep == thedep)
+  # Select subdata for the departement
+  sub &lt;- dat.Deps[inds, ]
+  # Check that dates are sorted
+  all(sub$date2 == sort(sub$date2)) 
+  
+  # Compute relative difference in number of cases 7 days ago
+  reldiffCases &lt;- c(rep(NA, 7), (sub[8:nrow(sub), &quot;nb_pos&quot;] - sub[1:(nrow(sub)-7), &quot;nb_pos&quot;])/sub[1:(nrow(sub)-7), &quot;nb_pos&quot;])
+  
+  dat.Deps[inds, &quot;reldiffCases&quot;] &lt;- reldiffCases
+}
+
+# Define departement colors
+colsDeps &lt;- rep(palette(rainbow(length(unique(dat.Deps$dep)))), each = 15)
+colsDeps &lt;- colsDeps[1:length(unique(dat.Deps$dep))]
+names(colsDeps) &lt;- unique(dat.Deps$dep)</code></pre>
+<p>Figures like SPF: all departments on a given date</p>
+<pre class="r"><code>thesemaine &lt;- &quot;2021-07-05-2021-07-11&quot;
+inds &lt;- which(dat.Deps$semaine == thesemaine)
+sub &lt;- dat.Deps[inds,]
+# Include only if min 30 pos tests
+sub &lt;- sub[which(sub$nb_pos &gt; 30), ]
+plot(sub$tx_C1, sub$reldiffCases, ylim = c(-0.1, 0.5), 
+     frame.plot = FALSE, pch = 16, col = colsDeps[sub$dep], xlab = &quot;Proportion L452R&quot;, ylab = &quot;Augmentation relative nb cas&quot;, main = paste0(thesemaine, &quot;, tous deps&quot;))
+abline(h= 0)
+text(sub$tx_C1, sub$reldiffCases, labels = sub$dep, adj = c(0.5, -1), cex = 0.5)</code></pre>
+<p><img src="pourNB_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<pre class="r"><code>for(thedep in c(&quot;75&quot;, &quot;13&quot;, &quot;78&quot;, &quot;34&quot;)){
+  inds &lt;- which(dat.Deps$dep == thedep)
+  sub &lt;- dat.Deps[inds,]
+  # Include only if min 30 pos tests
+  sub &lt;- sub[which(sub$nb_pos &gt; 30), ]
+  plot(sub$tx_C1, sub$reldiffCases, 
+       xlim = c(0, 100),
+       #ylim = c(-0.1, 0.4), 
+       frame.plot = FALSE, pch = 16, col = colsDeps[thedep],
+       xlab = &quot;Proportion L452R&quot;, ylab = &quot;Augmentation relative nb cas&quot;, main = paste0(&quot;Department &quot;, thedep, &quot;, toutes dates&quot;))
+  abline(h= 0)
+}</code></pre>
+<p><img src="pourNB_files/figure-html/unnamed-chunk-17-1.png" width="672" /><img src="pourNB_files/figure-html/unnamed-chunk-17-2.png" width="672" /><img src="pourNB_files/figure-html/unnamed-chunk-17-3.png" width="672" /><img src="pourNB_files/figure-html/unnamed-chunk-17-4.png" width="672" /></p>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
