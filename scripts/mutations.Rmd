@@ -230,7 +230,7 @@ for(reg in unique.noNA(dat.Regions$reg_name)){
 ## Proportions
 
 ```{r}
-plotMut <- function(time, test0, test1, col, thetit, ymax = 0.5, quot = TRUE){
+plotMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE){
   # dat: dataset to be plotted
   # quot: boolean to decide whether to plot the daily values (averaged over 7 days) [TRUE], or the sum over the last 7 days [FALSE]
   
@@ -277,7 +277,7 @@ plotMut(dat.France$date2, dat.France$nb_C0, dat.France$nb_C1, col = col452R, the
 ```{r eval = FALSE}
 for(reg in unique.noNA(dat.Regions$reg_name)){
   dat <- dat.Regions[dat.Regions$reg_name == reg, ]
-  plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", reg))
+  plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", reg), ymax = 1)
 }
 
 ```
@@ -296,6 +296,8 @@ for(dep in sort(unique.noNA(dat.Deps$departement))){
 ```
 
 ## Geographic
+
+### L452R 
 
 Source idea map: [Le Monde map](https://www.lemonde.fr/les-decodeurs/article/2020/05/05/coronavirus-age-mortalite-departements-pays-suivez-l-evolution-de-l-epidemie-en-cartes-et-graphiques_6038751_4355770.html) [| archived](https://archive.is/eJ68m)
 
@@ -417,6 +419,121 @@ legend("topright", legend = c("", paste0("Données tracées si au moins ", 100*t
 et au moins ", thrntot, " criblages sur la semaine. 
 Itv confiance sur nb crib. moyen 7 derniers jours.")), cex = cexLegend, bty = "n")
 ```
+
+### E484K/Q
+
+```{r}
+
+thrp <- 0.1
+thrntot <- 30
+
+drawRec2 <- function(depDat, x, y, dxy, col = col484K, thr.p = thrp, thr.n = thrntot/7, colMaj = col452R.complement){
+  # depDat: dataset for this departement
+  # x: x position of the bottom left corner
+  # y: y position of the bottom left corner
+  # dxy: rectangle size c(dx, dy)
+  # col: main color
+  # thr.p: threshold to plot criblage data, minimum proportion of cases
+  # thr.n: threshold in terms of number of tests done
+  
+  relTime <- as.numeric(depDat$time)/max(as.numeric(depDat$time))
+  test0 <- depDat$nb_A0 + depDat$nb_B0
+  test1 <- depDat$nb_A1 + depDat$nb_B1
+  
+  denom <- 7
+  n <- (test1 + test0) / denom
+  p <- test1 / (test1 + test0)
+  
+  scale.xy <- function(z, z1, z2){
+    # z has to be between 0 and 1
+    stopifnot(z >= 0 | z <= 1)
+    z1 + (z2 - z1) * z
+  }
+  
+  # Computation of the confidence interval
+  deltaItv <- 1.96 * sqrt(p * (1-p) / n)
+  keepPts <- !is.na(deltaItv) & (n/(depDat$nb_pos/denom) >= thr.p) & (n >= thr.n)
+  
+  if(any(keepPts)){
+      # Remove points for which the itv cannot be computed
+  # and point with not enough criblage
+  deltaItv <- deltaItv[keepPts]
+  pp <- p[keepPts]
+  
+  # Color depends on whether main mutation
+  if(pp[length(pp)] > 0.5){
+    thecol <- colMaj
+  }else{
+      thecol <- col
+  }
+
+  lines(scale.xy(relTime[keepPts], x, x + dxy[1]), scale.xy(pp, y, y + dxy[2]), type = "o", col = thecol, pch = 16, cex = 0.2, lwd = 0.7)
+  
+  xx <- relTime[keepPts]
+  
+  polygon(x = scale.xy(c(xx, rev(xx), xx[1]), x, x + dxy[1]), y = scale.xy(c(sapply(pp + deltaItv, min, 1), 
+                                                                             sapply(rev(pp - deltaItv), max, 0), 
+                                                                             sapply((pp + deltaItv)[1], min, 1)), y, y + dxy[2]), border = NA, col = adjustcolor(thecol, alpha.f = 0.3))
+  }
+  
+}
+```
+
+```{r, fig.width = 7, fig.height = 9}
+
+par(mar = rep(0.2, 4) + c(2, 0, 2, 0))
+# Initialize plot with rect positions
+plot(c(round(geog$x, rr), round(geog$x, rr) + ddr[1]), c(round(geog$y, rr), round(geog$y, rr) + ddr[2]), type = "n", asp = 1, axes = FALSE, xlab = "", ylab = "")
+
+# Add titles of the plots
+text(x = round(geog$x, rr) + ddr[1]/2, y = round(geog$y, rr) + ddr[2], labels = paste0(geog$shortName, "(", geog$dep, ")"), bg = "white", adj = c(0.5, -0.4), cex = 0.45)
+
+for(i in seq_len(nrow(geog))){
+  # Draw rectangle
+  rect(xleft = round(geog[i, "x"], rr), ybottom = round(geog[i, "y"], rr), xright = round(geog[i, "x"], rr) + ddr[1], ytop = round(geog[i, "y"], rr) + ddr[2], lwd = 0.5, border = gray(0.6))
+  
+  # Select departement data
+  depDat <- dat.Deps[which(dat.Deps$dep == geog[i, "dep"]), ]
+  
+  # Horizontal line for 0.5
+  lines(c(round(geog[i, "x"], rr), round(geog[i, "x"], rr) + ddr[1]), rep(round(geog[i, "y"], rr) + ddr[2]/2, 2), lty = 1, col = gray(0.6), lwd = 0.5)
+  
+  # Draw curve
+  drawRec2(depDat, x = round(geog[i, "x"], rr), y = round(geog[i, "y"], rr), dxy = ddr, col = col484K)
+
+#    readline(prompt="Press [enter] to continue")
+
+}
+
+
+#drawRec(depDat, x = 5.73820184045573, y = 7.01837788404748, dxy = ddr, col = col452R)
+
+minDay <- format(min(dat.Deps$date2), "%d %b")
+maxDay <- format(max(dat.Deps$date2), "%d %b")
+
+
+xP <- 1.34031283936975
+yP <- 15.0106959818622
+cexLeg <- 0.45
+text(x = xP, y = yP, adj = c(1, 0), labels = "0% ", cex = 0.4)
+text(x = xP, y = yP + ddr[2], adj = c(1, 0.5), labels = "100% ", cex = cexLeg)
+
+text(x = c(xP, xP + ddr[1]), y = c(yP, yP), adj = c(0.5, 1.5), labels = c(minDay, maxDay), cex = cexLeg)
+
+title("Proportion de E484K/Q")
+
+  mtext("  @flodebarre
+  Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
+  Code : https://github.com/flodebarre/nouveauCriblage
+  Idée carte : Les Decodeurs, Le Monde https://tinyurl.com/carteFRDecLM", side = 1, line = 1, cex = 0.6, col = gray(0.5), adj = 0)
+  
+cexLegend <- 0.6
+legend("topright", legend = c("Proportion E484K/Q, < 50% le dernier jour", "≥ 50% le dernier jour"), cex = cexLegend, bty = "n", col = c(col484K, col452R.complement), lty = 1, pch = 16)
+legend("topright", legend = c("", paste0("Données tracées si au moins ", 100*thrp, "% des cas criblés
+et au moins ", thrntot, " criblages sur la semaine. 
+Itv confiance sur nb crib. moyen 7 derniers jours.")), cex = cexLegend, bty = "n")
+```
+
 
 # Other
 
