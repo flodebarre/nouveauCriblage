@@ -227,7 +227,7 @@ for(reg in unique.noNA(dat.Regions$reg_name)){
 ```
 
 
-## Proportions
+## Proportions / Nb tests
 
 ```{r}
 plotMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE){
@@ -251,7 +251,7 @@ plotMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE){
      xlab = "", ylab = "p", yaxs = "i", xaxs = "i", 
      type = "o", col = col, pch = 16)
 mtext("  Parmi les n(t) tests interprétables recherchant la mutation
-  Intervalle de confiance binomial sur ce nombre de tests n(t)", side = 3, cex = 0.6, adj = 0, line = 0)
+  Intervalle de confiance binomial sur ce nombre de tests n(t)", side = 3, cex = 0.6, adj = 0, line = -1)
 mtext("date", line = 2, side = 1)  
   axis(4)
   xx <- base::as.Date(time)[keepPts]
@@ -264,13 +264,60 @@ Code : https://github.com/flodebarre/nouveauCriblage", side = 1, line = 3.5, cex
 }
 ```
 
+
+
+```{r}
+plotCaseMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE){
+  # dat: dataset to be plotted
+  # quot: boolean to decide whether to plot the daily values (averaged over 7 days) [TRUE], or the sum over the last 7 days [FALSE]
+  
+  if(quot){denom <- 7}else{denom <- 1}
+  n <- (test1 + test0) / denom
+  p <- test1 / (test1 + test0)
+  
+  # Computation of the confidence interval
+  deltaItv <- 1.96 * sqrt(p * (1-p) / n)
+  keepPts <- !is.na(deltaItv) 
+  # Remove points for which the itv cannot be computed
+  deltaItv <- deltaItv[keepPts]
+  pp <- p[keepPts]
+  nn <- n[keepPts]
+
+  par(mar = c(5, 4, 4, 4))
+  par(las = 1)
+  ymax <- 1.05 * max(pp*nn + nn*deltaItv, na.rm = TRUE)
+  plot(as.Date(time), p * n, ylim = c(0, ymax), frame.plot = FALSE, 
+     xlab = "", ylab = "n", yaxs = "i", xaxs = "i", 
+     type = "o", col = col, pch = 16)
+mtext("  Parmi les n(t) tests interprétables recherchant la mutation
+  Intervalle de confiance binomial sur ce nombre de tests n(t)", side = 3, cex = 0.6, adj = 0, line = -1)
+mtext("date", line = 2, side = 1)  
+  axis(4)
+  xx <- base::as.Date(time)[keepPts]
+  polygon(x = c(xx, rev(xx), xx[1]), y = c(nn*pp + nn*deltaItv, rev(nn*pp - nn*deltaItv), (nn*pp + nn*deltaItv)[1]), border = NA, col = adjustcolor(col, alpha.f = 0.3))
+  
+  mtext("Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
+Code : https://github.com/flodebarre/nouveauCriblage", side = 1, line = 3.5, cex = 0.7, col = gray(0.5), adj = 0)
+
+  title(main = thetit)
+}
+```
+
+
 ### France 
 
 ```{r}
-plotMut(dat.France$date2, dat.France$nb_A0, dat.France$nb_A1, col = col484K, thetit = "E484K, France")
-plotMut(dat.France$date2, dat.France$nb_B0, dat.France$nb_B1, col = col484Q, thetit = "E484Q, France")
+plotMut(dat.France$date2, dat.France$nb_A0, dat.France$nb_A1, col = col484K, thetit = "Proportion of cases with \nE484K, France", ymax = 0.3)
+plotMut(dat.France$date2, dat.France$nb_B0, dat.France$nb_B1, col = col484Q, thetit = "Proportion of cases with \nE484Q, France", ymax = 0.3)
 plotMut(dat.France$date2, dat.France$nb_C0, dat.France$nb_C1, col = col452R, thetit = "L452R, France")
 ```
+
+```{r}
+plotCaseMut(dat.France$date2, dat.France$nb_A0, dat.France$nb_A1, col = col484K, thetit = "E484K, France")
+plotCaseMut(dat.France$date2, dat.France$nb_B0, dat.France$nb_B1, col = col484Q, thetit = "E484Q, France")
+plotCaseMut(dat.France$date2, dat.France$nb_C0, dat.France$nb_C1, col = col452R, thetit = "L452R, France")
+```
+
 
 ### Regions 
 
@@ -293,6 +340,22 @@ for(dep in sort(unique.noNA(dat.Deps$departement))){
   dat <- dat.Deps[dat.Deps$departement == dep, ]
   plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", dep), ymax = ymax)
 }
+```
+
+```{r eval = FALSE}
+ymax <- max(1, 1.05*max(dat.Deps$nb_B1 / (dat.Deps$nb_B1 + dat.Deps$nb_B0), na.rm = TRUE))
+for(dep in sort(unique.noNA(dat.Deps$departement))){
+  dat <- dat.Deps[dat.Deps$departement == dep, ]
+  plotMut(time = dat$date2, test0 = dat$nb_B0, test1 = dat$nb_B1, col = col484Q, thetit = paste0("E484Q, ", dep), ymax = ymax)
+}
+```
+
+```{r}
+dep <- "Hérault"
+dat <- dat.Deps[dat.Deps$departement == dep, ]
+  plotCaseMut(time = dat$date2, test0 = dat$nb_B0, test1 = dat$nb_B1, col = col484Q, thetit = paste0("E484Q, ", dep))
+  plotCaseMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", dep))
+  plotCaseMut(time = dat$date2, test0 = dat$nb_A0, test1 = dat$nb_A1, col = col484K, thetit = paste0("E484K, ", dep))
 ```
 
 ## Geographic
@@ -330,7 +393,7 @@ drawRec <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thrn
   
   # Computation of the confidence interval
   deltaItv <- 1.96 * sqrt(p * (1-p) / n)
-  keepPts <- !is.na(deltaItv) & (depDat$tx_C1/100 >= thr.p) & (n >= thr.n)
+  keepPts <- !is.na(deltaItv) & (depDat$tx_crib/100 >= thr.p) & (n >= thr.n)
   
   if(any(keepPts)){
       # Remove points for which the itv cannot be computed

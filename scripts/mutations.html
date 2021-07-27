@@ -334,7 +334,7 @@ unique(dat.Regions$reg_name)</code></pre>
 ## [17] &quot;La Réunion&quot;                 &quot;Mayotte&quot;                   
 ## [19] NA</code></pre>
 <pre class="r"><code>unique(dat.Regions[which(is.na(dat.Regions$reg_name)), &quot;reg&quot;])</code></pre>
-<pre><code>## [1] 7 8</code></pre>
+<pre><code>## [1] 5 7 8</code></pre>
 </div>
 <div id="departments" class="section level3">
 <h3>Departments</h3>
@@ -398,7 +398,7 @@ unique(dat.Deps$departement)</code></pre>
 ##  [99] &quot;Guyane&quot;                  &quot;La Réunion&quot;             
 ## [101] &quot;Mayotte&quot;                 NA</code></pre>
 <pre class="r"><code>unique(dat.Deps[which(is.na(dat.Deps$departement)), &quot;dep&quot;])</code></pre>
-<pre><code>## [1] &quot;977&quot; &quot;978&quot;</code></pre>
+<pre><code>## [1] &quot;975&quot; &quot;977&quot; &quot;978&quot;</code></pre>
 <pre class="r"><code># 977 Saint-Barthélemy, 978 Saint-Martin</code></pre>
 </div>
 </div>
@@ -442,11 +442,11 @@ dat.Deps$time &lt;- dat.Deps$date2 - min(dat.Deps$date2)</code></pre>
 }
 
 testDat(dat.France)</code></pre>
-<pre><code>## [1] 28 26 28 28 28  0  0  0</code></pre>
+<pre><code>## [1] 48 47 48 48 48  0  0  0</code></pre>
 <pre class="r"><code>testDat(dat.Regions)</code></pre>
-<pre><code>## [1] 560 119 489 499 499   0   0   0</code></pre>
+<pre><code>## [1] 1008  279  866  882  882    0    0    0</code></pre>
 <pre class="r"><code>testDat(dat.Deps)</code></pre>
-<pre><code>## [1] 2884    4 2683 2751 2751    0    0    0</code></pre>
+<pre><code>## [1] 4992    5 4651 4726 4726    0    0    0</code></pre>
 </div>
 </div>
 <div id="plots" class="section level1">
@@ -485,9 +485,9 @@ title(main = &quot;France&quot;)</code></pre>
 }</code></pre>
 <p><img src="mutations_files/figure-html/unnamed-chunk-15-2.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-3.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-4.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-5.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-6.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-7.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-8.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-9.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-10.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-11.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-12.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-13.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-14.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-15.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-16.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-17.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-18.png" width="672" /><img src="mutations_files/figure-html/unnamed-chunk-15-19.png" width="672" /></p>
 </div>
-<div id="proportions" class="section level2">
-<h2>Proportions</h2>
-<pre class="r"><code>plotMut &lt;- function(time, test0, test1, col, thetit, ymax = 0.5, quot = TRUE){
+<div id="proportions-nb-tests" class="section level2">
+<h2>Proportions / Nb tests</h2>
+<pre class="r"><code>plotMut &lt;- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE){
   # dat: dataset to be plotted
   # quot: boolean to decide whether to plot the daily values (averaged over 7 days) [TRUE], or the sum over the last 7 days [FALSE]
   
@@ -508,7 +508,7 @@ title(main = &quot;France&quot;)</code></pre>
      xlab = &quot;&quot;, ylab = &quot;p&quot;, yaxs = &quot;i&quot;, xaxs = &quot;i&quot;, 
      type = &quot;o&quot;, col = col, pch = 16)
 mtext(&quot;  Parmi les n(t) tests interprétables recherchant la mutation
-  Intervalle de confiance binomial sur ce nombre de tests n(t)&quot;, side = 3, cex = 0.6, adj = 0, line = 0)
+  Intervalle de confiance binomial sur ce nombre de tests n(t)&quot;, side = 3, cex = 0.6, adj = 0, line = -1)
 mtext(&quot;date&quot;, line = 2, side = 1)  
   axis(4)
   xx &lt;- base::as.Date(time)[keepPts]
@@ -519,20 +519,60 @@ Code : https://github.com/flodebarre/nouveauCriblage&quot;, side = 1, line = 3.5
 
   title(main = thetit)
 }</code></pre>
+<pre class="r"><code>plotCaseMut &lt;- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE){
+  # dat: dataset to be plotted
+  # quot: boolean to decide whether to plot the daily values (averaged over 7 days) [TRUE], or the sum over the last 7 days [FALSE]
+  
+  if(quot){denom &lt;- 7}else{denom &lt;- 1}
+  n &lt;- (test1 + test0) / denom
+  p &lt;- test1 / (test1 + test0)
+  
+  # Computation of the confidence interval
+  deltaItv &lt;- 1.96 * sqrt(p * (1-p) / n)
+  keepPts &lt;- !is.na(deltaItv) 
+  # Remove points for which the itv cannot be computed
+  deltaItv &lt;- deltaItv[keepPts]
+  pp &lt;- p[keepPts]
+  nn &lt;- n[keepPts]
+
+  par(mar = c(5, 4, 4, 4))
+  par(las = 1)
+  ymax &lt;- 1.05 * max(pp*nn + nn*deltaItv, na.rm = TRUE)
+  plot(as.Date(time), p * n, ylim = c(0, ymax), frame.plot = FALSE, 
+     xlab = &quot;&quot;, ylab = &quot;n&quot;, yaxs = &quot;i&quot;, xaxs = &quot;i&quot;, 
+     type = &quot;o&quot;, col = col, pch = 16)
+mtext(&quot;  Parmi les n(t) tests interprétables recherchant la mutation
+  Intervalle de confiance binomial sur ce nombre de tests n(t)&quot;, side = 3, cex = 0.6, adj = 0, line = -1)
+mtext(&quot;date&quot;, line = 2, side = 1)  
+  axis(4)
+  xx &lt;- base::as.Date(time)[keepPts]
+  polygon(x = c(xx, rev(xx), xx[1]), y = c(nn*pp + nn*deltaItv, rev(nn*pp - nn*deltaItv), (nn*pp + nn*deltaItv)[1]), border = NA, col = adjustcolor(col, alpha.f = 0.3))
+  
+  mtext(&quot;Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
+Code : https://github.com/flodebarre/nouveauCriblage&quot;, side = 1, line = 3.5, cex = 0.7, col = gray(0.5), adj = 0)
+
+  title(main = thetit)
+}</code></pre>
 <div id="france" class="section level3">
 <h3>France</h3>
-<pre class="r"><code>plotMut(dat.France$date2, dat.France$nb_A0, dat.France$nb_A1, col = col484K, thetit = &quot;E484K, France&quot;)</code></pre>
-<p><img src="mutations_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
-<pre class="r"><code>plotMut(dat.France$date2, dat.France$nb_B0, dat.France$nb_B1, col = col484Q, thetit = &quot;E484Q, France&quot;)</code></pre>
-<p><img src="mutations_files/figure-html/unnamed-chunk-17-2.png" width="672" /></p>
+<pre class="r"><code>plotMut(dat.France$date2, dat.France$nb_A0, dat.France$nb_A1, col = col484K, thetit = &quot;Proportion of cases with \nE484K, France&quot;, ymax = 0.3)</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+<pre class="r"><code>plotMut(dat.France$date2, dat.France$nb_B0, dat.France$nb_B1, col = col484Q, thetit = &quot;Proportion of cases with \nE484Q, France&quot;, ymax = 0.3)</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-18-2.png" width="672" /></p>
 <pre class="r"><code>plotMut(dat.France$date2, dat.France$nb_C0, dat.France$nb_C1, col = col452R, thetit = &quot;L452R, France&quot;)</code></pre>
-<p><img src="mutations_files/figure-html/unnamed-chunk-17-3.png" width="672" /></p>
+<p><img src="mutations_files/figure-html/unnamed-chunk-18-3.png" width="672" /></p>
+<pre class="r"><code>plotCaseMut(dat.France$date2, dat.France$nb_A0, dat.France$nb_A1, col = col484K, thetit = &quot;E484K, France&quot;)</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<pre class="r"><code>plotCaseMut(dat.France$date2, dat.France$nb_B0, dat.France$nb_B1, col = col484Q, thetit = &quot;E484Q, France&quot;)</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-19-2.png" width="672" /></p>
+<pre class="r"><code>plotCaseMut(dat.France$date2, dat.France$nb_C0, dat.France$nb_C1, col = col452R, thetit = &quot;L452R, France&quot;)</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-19-3.png" width="672" /></p>
 </div>
 <div id="regions-1" class="section level3">
 <h3>Regions</h3>
 <pre class="r"><code>for(reg in unique.noNA(dat.Regions$reg_name)){
   dat &lt;- dat.Regions[dat.Regions$reg_name == reg, ]
-  plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0(&quot;L452R, &quot;, reg))
+  plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0(&quot;L452R, &quot;, reg), ymax = 1)
 }</code></pre>
 </div>
 <div id="departements" class="section level3">
@@ -542,10 +582,25 @@ Code : https://github.com/flodebarre/nouveauCriblage&quot;, side = 1, line = 3.5
   dat &lt;- dat.Deps[dat.Deps$departement == dep, ]
   plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0(&quot;L452R, &quot;, dep), ymax = ymax)
 }</code></pre>
+<pre class="r"><code>ymax &lt;- max(1, 1.05*max(dat.Deps$nb_B1 / (dat.Deps$nb_B1 + dat.Deps$nb_B0), na.rm = TRUE))
+for(dep in sort(unique.noNA(dat.Deps$departement))){
+  dat &lt;- dat.Deps[dat.Deps$departement == dep, ]
+  plotMut(time = dat$date2, test0 = dat$nb_B0, test1 = dat$nb_B1, col = col484Q, thetit = paste0(&quot;E484Q, &quot;, dep), ymax = ymax)
+}</code></pre>
+<pre class="r"><code>dep &lt;- &quot;Hérault&quot;
+dat &lt;- dat.Deps[dat.Deps$departement == dep, ]
+  plotCaseMut(time = dat$date2, test0 = dat$nb_B0, test1 = dat$nb_B1, col = col484Q, thetit = paste0(&quot;E484Q, &quot;, dep))</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
+<pre class="r"><code>  plotCaseMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0(&quot;L452R, &quot;, dep))</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-24-2.png" width="672" /></p>
+<pre class="r"><code>  plotCaseMut(time = dat$date2, test0 = dat$nb_A0, test1 = dat$nb_A1, col = col484K, thetit = paste0(&quot;E484K, &quot;, dep))</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-24-3.png" width="672" /></p>
 </div>
 </div>
 <div id="geographic" class="section level2">
 <h2>Geographic</h2>
+<div id="l452r" class="section level3">
+<h3>L452R</h3>
 <p>Source idea map: <a href="https://www.lemonde.fr/les-decodeurs/article/2020/05/05/coronavirus-age-mortalite-departements-pays-suivez-l-evolution-de-l-epidemie-en-cartes-et-graphiques_6038751_4355770.html">Le Monde map</a> <a href="https://archive.is/eJ68m">| archived</a></p>
 <pre class="r"><code>thrp &lt;- 0.1
 thrntot &lt;- 30
@@ -575,7 +630,7 @@ drawRec &lt;- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = t
   
   # Computation of the confidence interval
   deltaItv &lt;- 1.96 * sqrt(p * (1-p) / n)
-  keepPts &lt;- !is.na(deltaItv) &amp; (depDat$tx_C1/100 &gt;= thr.p) &amp; (n &gt;= thr.n)
+  keepPts &lt;- !is.na(deltaItv) &amp; (depDat$tx_crib/100 &gt;= thr.p) &amp; (n &gt;= thr.n)
   
   if(any(keepPts)){
       # Remove points for which the itv cannot be computed
@@ -660,7 +715,116 @@ legend(&quot;topright&quot;, legend = c(&quot;Proportion L452R, &lt; 50% le dern
 legend(&quot;topright&quot;, legend = c(&quot;&quot;, paste0(&quot;Données tracées si au moins &quot;, 100*thrp, &quot;% des cas criblés
 et au moins &quot;, thrntot, &quot; criblages sur la semaine. 
 Itv confiance sur nb crib. moyen 7 derniers jours.&quot;)), cex = cexLegend, bty = &quot;n&quot;)</code></pre>
-<p><img src="mutations_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<p><img src="mutations_files/figure-html/unnamed-chunk-26-1.png" width="672" /></p>
+</div>
+<div id="e484kq" class="section level3">
+<h3>E484K/Q</h3>
+<pre class="r"><code>thrp &lt;- 0.1
+thrntot &lt;- 30
+
+drawRec2 &lt;- function(depDat, x, y, dxy, col = col484K, thr.p = thrp, thr.n = thrntot/7, colMaj = col452R.complement){
+  # depDat: dataset for this departement
+  # x: x position of the bottom left corner
+  # y: y position of the bottom left corner
+  # dxy: rectangle size c(dx, dy)
+  # col: main color
+  # thr.p: threshold to plot criblage data, minimum proportion of cases
+  # thr.n: threshold in terms of number of tests done
+  
+  relTime &lt;- as.numeric(depDat$time)/max(as.numeric(depDat$time))
+  test0 &lt;- depDat$nb_A0 + depDat$nb_B0
+  test1 &lt;- depDat$nb_A1 + depDat$nb_B1
+  
+  denom &lt;- 7
+  n &lt;- (test1 + test0) / denom
+  p &lt;- test1 / (test1 + test0)
+  
+  scale.xy &lt;- function(z, z1, z2){
+    # z has to be between 0 and 1
+    stopifnot(z &gt;= 0 | z &lt;= 1)
+    z1 + (z2 - z1) * z
+  }
+  
+  # Computation of the confidence interval
+  deltaItv &lt;- 1.96 * sqrt(p * (1-p) / n)
+  keepPts &lt;- !is.na(deltaItv) &amp; (n/(depDat$nb_pos/denom) &gt;= thr.p) &amp; (n &gt;= thr.n)
+  
+  if(any(keepPts)){
+      # Remove points for which the itv cannot be computed
+  # and point with not enough criblage
+  deltaItv &lt;- deltaItv[keepPts]
+  pp &lt;- p[keepPts]
+  
+  # Color depends on whether main mutation
+  if(pp[length(pp)] &gt; 0.5){
+    thecol &lt;- colMaj
+  }else{
+      thecol &lt;- col
+  }
+
+  lines(scale.xy(relTime[keepPts], x, x + dxy[1]), scale.xy(pp, y, y + dxy[2]), type = &quot;o&quot;, col = thecol, pch = 16, cex = 0.2, lwd = 0.7)
+  
+  xx &lt;- relTime[keepPts]
+  
+  polygon(x = scale.xy(c(xx, rev(xx), xx[1]), x, x + dxy[1]), y = scale.xy(c(sapply(pp + deltaItv, min, 1), 
+                                                                             sapply(rev(pp - deltaItv), max, 0), 
+                                                                             sapply((pp + deltaItv)[1], min, 1)), y, y + dxy[2]), border = NA, col = adjustcolor(thecol, alpha.f = 0.3))
+  }
+  
+}</code></pre>
+<pre class="r"><code>par(mar = rep(0.2, 4) + c(2, 0, 2, 0))
+# Initialize plot with rect positions
+plot(c(round(geog$x, rr), round(geog$x, rr) + ddr[1]), c(round(geog$y, rr), round(geog$y, rr) + ddr[2]), type = &quot;n&quot;, asp = 1, axes = FALSE, xlab = &quot;&quot;, ylab = &quot;&quot;)
+
+# Add titles of the plots
+text(x = round(geog$x, rr) + ddr[1]/2, y = round(geog$y, rr) + ddr[2], labels = paste0(geog$shortName, &quot;(&quot;, geog$dep, &quot;)&quot;), bg = &quot;white&quot;, adj = c(0.5, -0.4), cex = 0.45)
+
+for(i in seq_len(nrow(geog))){
+  # Draw rectangle
+  rect(xleft = round(geog[i, &quot;x&quot;], rr), ybottom = round(geog[i, &quot;y&quot;], rr), xright = round(geog[i, &quot;x&quot;], rr) + ddr[1], ytop = round(geog[i, &quot;y&quot;], rr) + ddr[2], lwd = 0.5, border = gray(0.6))
+  
+  # Select departement data
+  depDat &lt;- dat.Deps[which(dat.Deps$dep == geog[i, &quot;dep&quot;]), ]
+  
+  # Horizontal line for 0.5
+  lines(c(round(geog[i, &quot;x&quot;], rr), round(geog[i, &quot;x&quot;], rr) + ddr[1]), rep(round(geog[i, &quot;y&quot;], rr) + ddr[2]/2, 2), lty = 1, col = gray(0.6), lwd = 0.5)
+  
+  # Draw curve
+  drawRec2(depDat, x = round(geog[i, &quot;x&quot;], rr), y = round(geog[i, &quot;y&quot;], rr), dxy = ddr, col = col484K)
+
+#    readline(prompt=&quot;Press [enter] to continue&quot;)
+
+}
+
+
+#drawRec(depDat, x = 5.73820184045573, y = 7.01837788404748, dxy = ddr, col = col452R)
+
+minDay &lt;- format(min(dat.Deps$date2), &quot;%d %b&quot;)
+maxDay &lt;- format(max(dat.Deps$date2), &quot;%d %b&quot;)
+
+
+xP &lt;- 1.34031283936975
+yP &lt;- 15.0106959818622
+cexLeg &lt;- 0.45
+text(x = xP, y = yP, adj = c(1, 0), labels = &quot;0% &quot;, cex = 0.4)
+text(x = xP, y = yP + ddr[2], adj = c(1, 0.5), labels = &quot;100% &quot;, cex = cexLeg)
+
+text(x = c(xP, xP + ddr[1]), y = c(yP, yP), adj = c(0.5, 1.5), labels = c(minDay, maxDay), cex = cexLeg)
+
+title(&quot;Proportion de E484K/Q&quot;)
+
+  mtext(&quot;  @flodebarre
+  Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
+  Code : https://github.com/flodebarre/nouveauCriblage
+  Idée carte : Les Decodeurs, Le Monde https://tinyurl.com/carteFRDecLM&quot;, side = 1, line = 1, cex = 0.6, col = gray(0.5), adj = 0)
+  
+cexLegend &lt;- 0.6
+legend(&quot;topright&quot;, legend = c(&quot;Proportion E484K/Q, &lt; 50% le dernier jour&quot;, &quot;≥ 50% le dernier jour&quot;), cex = cexLegend, bty = &quot;n&quot;, col = c(col484K, col452R.complement), lty = 1, pch = 16)
+legend(&quot;topright&quot;, legend = c(&quot;&quot;, paste0(&quot;Données tracées si au moins &quot;, 100*thrp, &quot;% des cas criblés
+et au moins &quot;, thrntot, &quot; criblages sur la semaine. 
+Itv confiance sur nb crib. moyen 7 derniers jours.&quot;)), cex = cexLegend, bty = &quot;n&quot;)</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-28-1.png" width="672" /></p>
+</div>
 </div>
 </div>
 <div id="other" class="section level1">
@@ -668,9 +832,9 @@ Itv confiance sur nb crib. moyen 7 derniers jours.&quot;)), cex = cexLegend, bty
 <pre class="r"><code>dat &lt;- dat.Deps[dat.Deps$departement == &quot;Somme&quot;, ]
   plotNbCrib(dat)
   title(&quot;Somme&quot;)</code></pre>
-<p><img src="mutations_files/figure-html/unnamed-chunk-23-1.png" width="672" /></p>
+<p><img src="mutations_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
 <pre class="r"><code>    plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0(&quot;L452R, &quot;, &quot;Somme&quot;), ymax = ymax)</code></pre>
-<p><img src="mutations_files/figure-html/unnamed-chunk-23-2.png" width="672" /></p>
+<p><img src="mutations_files/figure-html/unnamed-chunk-29-2.png" width="672" /></p>
 </div>
 
 
