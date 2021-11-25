@@ -351,10 +351,11 @@ for(dep in sort(unique.noNA(dat.Deps$departement))){
 ```
 
 ```{r}
-dep <- "Hérault"
+dep <- "Alpes-Maritimes"
 dat <- dat.Deps[dat.Deps$departement == dep, ]
   plotCaseMut(time = dat$date2, test0 = dat$nb_B0, test1 = dat$nb_B1, col = col484Q, thetit = paste0("E484Q, ", dep))
   plotCaseMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", dep))
+  plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", dep))
   plotCaseMut(time = dat$date2, test0 = dat$nb_A0, test1 = dat$nb_A1, col = col484K, thetit = paste0("E484K, ", dep))
 ```
 

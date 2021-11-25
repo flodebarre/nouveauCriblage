@@ -442,11 +442,11 @@ dat.Deps$time &lt;- dat.Deps$date2 - min(dat.Deps$date2)</code></pre>
 }
 
 testDat(dat.France)</code></pre>
-<pre><code>## [1] 48 47 48 48 48  0  0  0</code></pre>
+<pre><code>## [1] 170 168 170 170 170   0   0   0</code></pre>
 <pre class="r"><code>testDat(dat.Regions)</code></pre>
-<pre><code>## [1] 1008  279  866  882  882    0    0    0</code></pre>
+<pre><code>## [1] 3570 1464 3198 3214 3214    0    0    0</code></pre>
 <pre class="r"><code>testDat(dat.Deps)</code></pre>
-<pre><code>## [1] 4992    5 4651 4726 4726    0    0    0</code></pre>
+<pre><code>## [1] 17680    38 16917 17000 17000     0     0     0</code></pre>
 </div>
 </div>
 <div id="plots" class="section level1">
@@ -587,14 +587,16 @@ for(dep in sort(unique.noNA(dat.Deps$departement))){
   dat &lt;- dat.Deps[dat.Deps$departement == dep, ]
   plotMut(time = dat$date2, test0 = dat$nb_B0, test1 = dat$nb_B1, col = col484Q, thetit = paste0(&quot;E484Q, &quot;, dep), ymax = ymax)
 }</code></pre>
-<pre class="r"><code>dep &lt;- &quot;Hérault&quot;
+<pre class="r"><code>dep &lt;- &quot;Alpes-Maritimes&quot;
 dat &lt;- dat.Deps[dat.Deps$departement == dep, ]
   plotCaseMut(time = dat$date2, test0 = dat$nb_B0, test1 = dat$nb_B1, col = col484Q, thetit = paste0(&quot;E484Q, &quot;, dep))</code></pre>
 <p><img src="mutations_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
 <pre class="r"><code>  plotCaseMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0(&quot;L452R, &quot;, dep))</code></pre>
 <p><img src="mutations_files/figure-html/unnamed-chunk-24-2.png" width="672" /></p>
-<pre class="r"><code>  plotCaseMut(time = dat$date2, test0 = dat$nb_A0, test1 = dat$nb_A1, col = col484K, thetit = paste0(&quot;E484K, &quot;, dep))</code></pre>
+<pre class="r"><code>  plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0(&quot;L452R, &quot;, dep))</code></pre>
 <p><img src="mutations_files/figure-html/unnamed-chunk-24-3.png" width="672" /></p>
+<pre class="r"><code>  plotCaseMut(time = dat$date2, test0 = dat$nb_A0, test1 = dat$nb_A1, col = col484K, thetit = paste0(&quot;E484K, &quot;, dep))</code></pre>
+<p><img src="mutations_files/figure-html/unnamed-chunk-24-4.png" width="672" /></p>
 </div>
 </div>
 <div id="geographic" class="section level2">
