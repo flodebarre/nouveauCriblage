@@ -240,7 +240,7 @@ plotReg <- function(reg){
 #[17] "La Réunion"                 "Mayotte" 
 ```
 
-```{r}
+```{r figRegionsMapNBCriblage, fig.width=10, fig.height=10}
 
 layout(matrix(1:15, ncol = 3, byrow = TRUE))
 
@@ -256,18 +256,56 @@ plotReg("Hauts-de-France")
 
 # 3 Plot credits
 par(mar = c(0, 0, 0, 0))
-plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.2, 1), ylim = c(-1, 1))
-text(0, 0, "@flodebarre, 
+plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.1, 1), ylim = c(-1, 1))
+text(0, 0, "@flodebarre 
+
 Data:
 https://www.data.gouv.fr/fr/datasets/
 donnees-de-laboratoires-pour-le-
-depistage-indicateurs-sur-les-mutations/", adj = 0, cex = 0.8, family = "mono")
+depistage-indicateurs-sur-les-mutations/
+
+Code: https://github.com/flodebarre/
+nouveauCriblage/blob/main/scripts/mutations.Rmd
+", adj = 0, cex = 0.8, family = "mono")
 
 # 4 NOR
 plotReg("Normandie")
 
 # 5 IDF
 plotReg("Île-de-France")
+
+# 6 GE
+plotReg("Grand Est")
+
+# 7 BRE
+plotReg("Bretagne")
+
+# 8 CVL
+plotReg("Centre-Val de Loire")
+
+# 9 BFC
+plotReg("Bourgogne-Franche-Comté")
+
+# 10 PDL
+plotReg("Pays de la Loire")
+
+# 11 ARA
+plotReg("Auvergne-Rhône-Alpes")
+
+# 12 PACA
+plotReg("Provence-Alpes-Côte d'Azur")
+
+# 13 NAQ
+plotReg("Nouvelle-Aquitaine")
+
+# 14 OCC
+plotReg("Occitanie")
+
+# 15 COR
+plotReg("Corse")
+#[1] "Auvergne-Rhône-Alpes"       "Hauts-de-France"            "Provence-Alpes-Côte d'Azur" "Grand Est"                 
+# [5] "Occitanie"                  "Normandie"                  "Nouvelle-Aquitaine"         "Centre-Val de Loire"       
+# [9] "Corse"                      "Bourgogne-Franche-Comté"    "Bretagne"                   "Pays de la Loire"  
 
 ```
 
@@ -380,14 +418,14 @@ for(reg in unique.noNA(dat.Regions$reg_name)){
 ymax <- max(1, 1.05*max(dat.Deps$nb_C1 / (dat.Deps$nb_C1 + dat.Deps$nb_C0), na.rm = TRUE))
 ```
 
-```{r eval = TRUE}
+```{r eval = FALSE}
 for(dep in sort(unique.noNA(dat.Deps$departement))){
   dat <- dat.Deps[dat.Deps$departement == dep, ]
   plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", dep), ymax = ymax)
 }
 ```
 
-```{r eval = TRUE}
+```{r eval = FALSE}
 ymax <- max(1, 1.05*max(dat.Deps$nb_B1 / (dat.Deps$nb_B1 + dat.Deps$nb_B0), na.rm = TRUE))
 for(dep in sort(unique.noNA(dat.Deps$departement))){
   dat <- dat.Deps[dat.Deps$departement == dep, ]
