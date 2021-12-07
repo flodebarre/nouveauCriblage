@@ -34,7 +34,7 @@ colMut <- brewer.pal(n = 8, name = "Dark2")
 col484K <- colMut[1]
 col484Q <- colMut[2]
 col452R <- colMut[3]
-colTotCrib <- colMut[8]
+colTotCrib <- gray(0)#colMut[8]
 colTot <- colMut[7]
 
 col452R.complement <- "#b37570"
@@ -187,28 +187,33 @@ testDat(dat.Deps)
 ## Numbers of tests
 
 ```{r}
-plotNbCrib <- function(dat, quot = TRUE, addLegend = TRUE){
+plotNbCrib <- function(dat, quot = TRUE, addLegend = TRUE, tp = "l", lwd = 1.5){
   # dat: dataset to be plotted
   # quot: boolean to decide whether to plot the daily values (averaged over 7 days) [TRUE], or the sum over the last 7 days [FALSE]
   # addLegend: whether to add plot legend
+  # tp: line type
   if(quot){denom <- 7}else{denom <- 1}
   par(las = 1)
   par(mar = c(2, 4, 3, 4))
   plot(as.Date(dat$date2), dat$nb_pos / denom, ylim = c(0, 1.05*max(dat$nb_pos / denom, na.rm = TRUE)), yaxs = "i", 
-       type = "o", pch = 16, col = colTot, frame.plot = FALSE, 
+       type = tp, pch = 16, col = colTot, 
+       lwd = lwd, 
+       frame.plot = FALSE, 
        xlab = "", ylab = "")
   
-  lines(as.Date(dat$date2), dat$nb_crib / denom, type = "o", pch = 16, col = colTotCrib)
+  lines(as.Date(dat$date2), dat$nb_crib / denom, type = tp, pch = 16, col = colTotCrib)
   
   if(addLegend){
     legend(x = "topright", legend = c("Nb tests positifs", "Nb tests criblés", "Nb tests interprétables E484K", "Nb tests interprétables E484Q", "Nb tests interprétables L452R"), 
          col = c(colTot, colTotCrib, col484K, col484Q, col452R), 
-         pch = 16, lty = 1, box.col = gray(0, 0), bty = "n")
+         #pch = 16, 
+         lty = 1, box.col = gray(0, 0), bty = "n", 
+         lwd = lwd)
   }
   
-  lines(as.Date(dat$date2), (dat$nb_A0 + dat$nb_A1) / denom, type = "o", pch = 16, col = col484K)
-  lines(as.Date(dat$date2), (dat$nb_B0 + dat$nb_B1) / denom, type = "o", pch = 16, col = col484Q)
-  lines(as.Date(dat$date2), (dat$nb_C0 + dat$nb_C1) / denom, type = "o", pch = 16, col = col452R)
+  lines(as.Date(dat$date2), (dat$nb_A0 + dat$nb_A1) / denom, type = tp, pch = 16, col = col484K, lwd = lwd)
+  lines(as.Date(dat$date2), (dat$nb_B0 + dat$nb_B1) / denom, type = tp, pch = 16, col = col484Q, lwd = lwd)
+  lines(as.Date(dat$date2), (dat$nb_C0 + dat$nb_C1) / denom, type = tp, pch = 16, col = col452R, lwd = lwd)
   
   axis(4)
 }
@@ -249,9 +254,10 @@ par(mar = c(0, 0, 0, 0))
 plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.2, 1), ylim = c(-1, 0.5))
 legend(x = 0, y = 0, legend = c("Nb tests positifs", "Nb tests criblés", "Nb tests interprétables E484K", "Nb tests interprétables E484Q", "Nb tests interprétables L452R"), 
          col = c(colTot, colTotCrib, col484K, col484Q, col452R), 
-         pch = 16, lty = 1, box.col = gray(0, 0), bty = "n", cex = 1)
+         #pch = 16, 
+         lty = 1, box.col = gray(0, 0), bty = "n", cex = 1)
 
-# HDF
+# 2 HDF
 plotReg("Hauts-de-France")
 
 # 3 Plot credits
@@ -504,7 +510,7 @@ drawRec <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thrn
 }
 ```
 
-```{r, fig.width = 7, fig.height = 9}
+```{r figMapDepL452R, fig.width = 7, fig.height = 9}
 geog <- read.csv("../data/position_deps.csv", header = FALSE)
 names(geog) <- c("x", "y", "dep", "shortName")
 rr <- 2 # Rounding factor
@@ -626,7 +632,7 @@ drawRec2 <- function(depDat, x, y, dxy, col = col484K, thr.p = thrp, thr.n = thr
 }
 ```
 
-```{r, fig.width = 7, fig.height = 9}
+```{r figMapDepE484, fig.width = 7, fig.height = 9}
 
 par(mar = rep(0.2, 4) + c(2, 0, 2, 0))
 # Initialize plot with rect positions
