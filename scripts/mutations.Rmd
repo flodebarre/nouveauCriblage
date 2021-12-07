@@ -95,9 +95,7 @@ codesRegions <- read.csv(dataFile, sep = ",", stringsAsFactors = FALSE)
 # Turn into dictionary
 regs <- codesRegions$nom_region
 names(regs) <- as.character(codesRegions$code_region)
-```
 
-```{r}
 # Add region name
 dat.Regions$reg_name <- regs[as.character(dat.Regions$reg)]
 
@@ -116,9 +114,8 @@ deps <- read.csv("../data/departement2020.csv", stringsAsFactors = FALSE)
 # Turn into dictionnary
 dps <- deps$libelle
 names(dps) <- as.character(deps$dep)
-```
 
-```{r}
+
 dat.Deps$departement <- dps[as.character(dat.Deps$dep)]
 
 unique(dat.Deps$departement)
@@ -190,21 +187,24 @@ testDat(dat.Deps)
 ## Numbers of tests
 
 ```{r}
-plotNbCrib <- function(dat, quot = TRUE){
+plotNbCrib <- function(dat, quot = TRUE, addLegend = TRUE){
   # dat: dataset to be plotted
   # quot: boolean to decide whether to plot the daily values (averaged over 7 days) [TRUE], or the sum over the last 7 days [FALSE]
+  # addLegend: whether to add plot legend
   if(quot){denom <- 7}else{denom <- 1}
   par(las = 1)
-  par(mar = c(4, 4, 3, 4))
+  par(mar = c(2, 4, 3, 4))
   plot(as.Date(dat$date2), dat$nb_pos / denom, ylim = c(0, 1.05*max(dat$nb_pos / denom, na.rm = TRUE)), yaxs = "i", 
        type = "o", pch = 16, col = colTot, frame.plot = FALSE, 
-       xlab = "date", ylab = "")
+       xlab = "", ylab = "")
   
   lines(as.Date(dat$date2), dat$nb_crib / denom, type = "o", pch = 16, col = colTotCrib)
   
-  legend(x = "topright", legend = c("Nb tests positifs", "Nb tests criblés", "Nb tests interprétables E484K", "Nb tests interprétables E484Q", "Nb tests interprétables L452R"), 
+  if(addLegend){
+    legend(x = "topright", legend = c("Nb tests positifs", "Nb tests criblés", "Nb tests interprétables E484K", "Nb tests interprétables E484Q", "Nb tests interprétables L452R"), 
          col = c(colTot, colTotCrib, col484K, col484Q, col452R), 
          pch = 16, lty = 1, box.col = gray(0, 0), bty = "n")
+  }
   
   lines(as.Date(dat$date2), (dat$nb_A0 + dat$nb_A1) / denom, type = "o", pch = 16, col = col484K)
   lines(as.Date(dat$date2), (dat$nb_B0 + dat$nb_B1) / denom, type = "o", pch = 16, col = col484Q)
@@ -221,9 +221,54 @@ title(main = "France")
 
 for(reg in unique.noNA(dat.Regions$reg_name)){
   dat <- dat.Regions[dat.Regions$reg_name == reg, ]
-  plotNbCrib(dat)
+  plotNbCrib(dat, addLegend = FALSE)
   title(main = reg)
 }
+
+
+# Function to plot one region
+plotReg <- function(reg){
+  dat <- dat.Regions[dat.Regions$reg_name == reg, ]
+  plotNbCrib(dat, addLegend = FALSE)
+  title(main = reg)
+}
+
+#[1] "Auvergne-Rhône-Alpes"       "Hauts-de-France"            "Provence-Alpes-Côte d'Azur" "Grand Est"                 
+# [5] "Occitanie"                  "Normandie"                  "Nouvelle-Aquitaine"         "Centre-Val de Loire"       
+# [9] "Corse"                      "Bourgogne-Franche-Comté"    "Bretagne"                   "Pays de la Loire"          
+#[13] "Île-de-France"              "Guadeloupe"                 "Martinique"                 "Guyane"                 
+#[17] "La Réunion"                 "Mayotte" 
+```
+
+```{r}
+
+layout(matrix(1:15, ncol = 3, byrow = TRUE))
+
+# 1 Plot legend
+par(mar = c(0, 0, 0, 0))
+plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.2, 1), ylim = c(-1, 0.5))
+legend(x = 0, y = 0, legend = c("Nb tests positifs", "Nb tests criblés", "Nb tests interprétables E484K", "Nb tests interprétables E484Q", "Nb tests interprétables L452R"), 
+         col = c(colTot, colTotCrib, col484K, col484Q, col452R), 
+         pch = 16, lty = 1, box.col = gray(0, 0), bty = "n", cex = 1)
+
+# HDF
+plotReg("Hauts-de-France")
+
+# 3 Plot credits
+par(mar = c(0, 0, 0, 0))
+plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.2, 1), ylim = c(-1, 1))
+text(0, 0, "@flodebarre, 
+Data:
+https://www.data.gouv.fr/fr/datasets/
+donnees-de-laboratoires-pour-le-
+depistage-indicateurs-sur-les-mutations/", adj = 0, cex = 0.8, family = "mono")
+
+# 4 NOR
+plotReg("Normandie")
+
+# 5 IDF
+plotReg("Île-de-France")
+
 ```
 
 
@@ -335,14 +380,14 @@ for(reg in unique.noNA(dat.Regions$reg_name)){
 ymax <- max(1, 1.05*max(dat.Deps$nb_C1 / (dat.Deps$nb_C1 + dat.Deps$nb_C0), na.rm = TRUE))
 ```
 
-```{r eval = FALSE}
+```{r eval = TRUE}
 for(dep in sort(unique.noNA(dat.Deps$departement))){
   dat <- dat.Deps[dat.Deps$departement == dep, ]
   plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", dep), ymax = ymax)
 }
 ```
 
-```{r eval = FALSE}
+```{r eval = TRUE}
 ymax <- max(1, 1.05*max(dat.Deps$nb_B1 / (dat.Deps$nb_B1 + dat.Deps$nb_B0), na.rm = TRUE))
 for(dep in sort(unique.noNA(dat.Deps$departement))){
   dat <- dat.Deps[dat.Deps$departement == dep, ]
@@ -386,10 +431,10 @@ drawRec <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thrn
   n <- (test1 + test0) / denom
   p <- test1 / (test1 + test0)
   
-  scale.xy <- function(z, z1, z2){
+  scale.xy <- function(z, z1, z2, zmax = 1){
     # z has to be between 0 and 1
     stopifnot(z >= 0 | z <= 1)
-    z1 + (z2 - z1) * z
+    z1 + (z2 - z1) * z/zmax
   }
   
   # Computation of the confidence interval
