@@ -338,18 +338,27 @@ plotMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE){
   par(las = 1)
   plot(as.Date(time), p, ylim = c(0, ymax), frame.plot = FALSE, 
      xlab = "", ylab = "p", yaxs = "i", xaxs = "i", 
-     type = "o", col = col, pch = 16)
+     type = "l", col = col, pch = 16)
 mtext("  Parmi les n(t) tests interprétables recherchant la mutation
   Intervalle de confiance binomial sur ce nombre de tests n(t)", side = 3, cex = 0.6, adj = 0, line = -1)
 mtext("date", line = 2, side = 1)  
   axis(4)
   xx <- base::as.Date(time)[keepPts]
+  # Add graduation
+  for(i in seq(0, 1, by = 0.1)){
+    abline(h = i, col = gray(0.9), lwd = 1.1)
+  }
+  for(i in seq(0.05, 0.95, by = 0.1)){
+    abline(h = i, col = gray(0.9), lwd = 0.8)
+  }
+  
   polygon(x = c(xx, rev(xx), xx[1]), y = c(pp + deltaItv, rev(pp - deltaItv), (pp + deltaItv)[1]), border = NA, col = adjustcolor(col, alpha.f = 0.3))
   
   mtext("Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
 Code : https://github.com/flodebarre/nouveauCriblage", side = 1, line = 3.5, cex = 0.7, col = gray(0.5), adj = 0)
 
   title(main = thetit)
+  print(p[length(p)])
 }
 ```
 
@@ -380,8 +389,9 @@ plotCaseMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE){
      type = "o", col = col, pch = 16)
 mtext("  Parmi les n(t) tests interprétables recherchant la mutation
   Intervalle de confiance binomial sur ce nombre de tests n(t)", side = 3, cex = 0.6, adj = 0, line = -1)
-mtext("date", line = 2, side = 1)  
-  axis(4)
+mtext("date", line = 2, side = 1) 
+  axis(2, at = seq(0, 1, by = 0.1))
+  axis(4, at = seq(0, 1, by = 0.1))
   xx <- base::as.Date(time)[keepPts]
   polygon(x = c(xx, rev(xx), xx[1]), y = c(nn*pp + nn*deltaItv, rev(nn*pp - nn*deltaItv), (nn*pp + nn*deltaItv)[1]), border = NA, col = adjustcolor(col, alpha.f = 0.3))
   
@@ -698,4 +708,3 @@ dat <- dat.Deps[dat.Deps$departement == "Somme", ]
     plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", "Somme"), ymax = ymax)
 
 ```
-
