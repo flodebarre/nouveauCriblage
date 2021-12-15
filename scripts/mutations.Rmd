@@ -28,6 +28,12 @@ Source of the data:
 # Initializations
 
 ```{r}
+# Whether to download the data
+dlData <- FALSE
+```
+
+
+```{r}
 library(RColorBrewer)
 colMut <- brewer.pal(n = 8, name = "Dark2")
 
@@ -60,18 +66,21 @@ URL_France <- "https://www.data.gouv.fr/fr/datasets/r/848debc4-0e42-4e3b-a176-af
 ```{r}
 # Download files from repo
 # Need to use extra option to follow the redirection
-download.file(URL_France, 
-              destfile="../data/muts_France.csv",
-              method="curl",
-              extra='-L')
-download.file(URL_Regions, 
-              destfile="../data/muts_Regions.csv",
-              method="curl",
-              extra='-L')
-download.file(URL_Deps, 
-              destfile="../data/muts_Deps.csv",
-              method="curl",
-              extra='-L')
+
+if(dlData){
+  download.file(URL_France, 
+                destfile="../data/muts_France.csv",
+                method="curl",
+                extra='-L')
+  download.file(URL_Regions, 
+                destfile="../data/muts_Regions.csv",
+                method="curl",
+                extra='-L')
+  download.file(URL_Deps, 
+                destfile="../data/muts_Deps.csv",
+                method="curl",
+                extra='-L')
+}
 
 
 dat.France <- read.csv("../data/muts_France.csv", sep = ";", stringsAsFactors = FALSE)
@@ -316,6 +325,7 @@ plotReg("Corse")
 ```
 
 
+
 ## Proportions / Nb tests
 
 ```{r}
@@ -363,6 +373,131 @@ Code : https://github.com/flodebarre/nouveauCriblage", side = 1, line = 3.5, cex
 ```
 
 
+```{r}
+plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 10^-6, quot = TRUE, scale = "logit", addNotes = TRUE){
+  # -- here showing n0/(n0+n1) --
+  # time: vector of values of times of sample collection
+  # test0: vector of numbers of tests with value 0
+  # test1: vector of numbers of tests with value 1
+  # col: color used for the plot
+  # thetit: title of the plot
+  # ymin: min y value
+  # ymax: max y value
+  # quot: (quotidien) boolean to decide whether to plot the daily values (averaged over 7 days) [TRUE], or the sum over the last 7 days [FALSE]
+  # scale: "logit" or "linear"
+  
+  if(quot){denom <- 7}else{denom <- 1}
+  n <- (test1 + test0) / denom
+  p <- test0 / (test1 + test0)
+  
+  # Computation of the confidence interval
+  deltaItv <- 1.96 * sqrt(p * (1-p) / n)
+  keepPts <- !is.na(deltaItv) 
+  # Remove points for which the interval cannot be computed
+  deltaItv <- deltaItv[keepPts]
+  pp <- p[keepPts]
+  
+  # Compute new values on the new scale
+  changeScale <- function(p){
+    out <- NA # Initialize output, have NA if scale not properly written
+    if(scale == "logit"){
+      out <- log(p /(1-p)) # Logit scale
+    }
+    if(scale == "linear"){
+      out <- p # Linear scale, no change
+    }
+    out
+  }
+
+  par(mar = c(5, 4, 4, 4))
+  par(las = 1, mgp = c(2.5, 0.3, 0), tck = -0.01)
+  
+  plot(as.Date(time), changeScale(p), 
+       ylim = c(changeScale(ymin), changeScale(ymax)), frame.plot = FALSE, 
+       xlab = "", ylab = "", 
+       type = "p", col = col, pch = 16, 
+       axes = FALSE)
+  
+  if(addNotes){
+    text(x = as.Date(time[1]), y = changeScale(ymax), labels = paste0("  Données jusqu'au ", format(as.Date(max(time)), "%d/%m/%Y"), 
+  "
+
+  Proportion p0 = C0 / (C0 + C1) parmi les tests interprétables recherchant la mutation
+  Intervalle de confiance binomial sur ce nombre de tests interprétables  
+  
+  Attention : 
+  - Les données publiques sont données partagées déjà lissées sur 7j, ce qui atténue le signal
+  - Le nombre de résultats de criblage rendus publics est actuellement faible"), cex = 0.7, adj = c(0, 1))
+  }
+
+  
+  # Label of the horizontal axis
+  #mtext("date", line = 2, side = 1)  
+
+  xx <- base::as.Date(time)[keepPts]
+  
+  # Add confidence interval as arrows
+  arrows(x0 = xx, 
+         x1 = xx, 
+         y0 = changeScale(pp - deltaItv), 
+         y1 = changeScale(pp + deltaItv), 
+         code = 0, 
+         lwd = 3, 
+         col = adjustcolor(col, alpha.f = 0.5), 
+         lend = 1)
+
+  if(scale == "linear"){
+    # Add graduation
+    for(i in seq(0, 1, by = 0.1)){
+      abline(h = i, col = gray(0.9), lwd = 1.1)
+    }
+    for(i in seq(0.05, 0.95, by = 0.1)){
+      abline(h = i, col = gray(0.9), lwd = 0.8)
+    }
+  }
+  
+
+  if(addNotes){
+  # Add note about data and code provenance
+  mtext("Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
+Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/mutations.Rmd", side = 1, line = 3.5, cex = 0.5, col = gray(0.5), adj = 0, family = "mono")
+  }
+
+  # Axes: 
+  # horizontal
+  xxl <- seq(as.Date(min(time)), as.Date(max(time)), by = "day")
+  axis(1, at = xxl, 
+       labels = format(seq(as.Date(min(time)), as.Date(max(time)), by = "day"), "%d/%m"), 
+       las = 2, 
+       cex.axis = 0.7)
+  
+  # Vertical axes
+  if(scale == "linear"){
+    axis(2)
+    axis(4)
+  }
+  if(scale == "logit"){
+    yvalues <- c(0.999, 0.99, 0.9, 0.75, 0.5, 0.25, 0.1, 0.05, 0.025, 0.01, 0.001)
+    axis(2, at = changeScale(yvalues), labels = yvalues)
+    axis(4, at = changeScale(yvalues), labels = yvalues)
+  }
+  
+  if(scale == "linear"){
+    mtext(expression("p"[0]), side = 2, las = 0, line = 2.5)
+  }
+  if(scale == "logit"){
+    mtext(expression(paste("p"[0], ", logit scale")), side = 2, las = 0, line = 2.5)
+  }
+  
+  title(main = thetit)
+  print(p[length(p)])
+}
+
+layout(1)
+ix <- which(dat.France$date2 >= "2021-11-01")
+plotMut0(dat.France[ix, "date2"], dat.France[ix, "nb_C0"], dat.France[ix, "nb_C1"], col = col452R, thetit = "Proportion des tests criblés sans la mutation L452R, France", ymin = 10^-2, ymax = 0.6)
+
+```
 
 ```{r}
 plotCaseMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE){
@@ -387,8 +522,10 @@ plotCaseMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE){
   plot(as.Date(time), p * n, ylim = c(0, ymax), frame.plot = FALSE, 
      xlab = "", ylab = "n", yaxs = "i", xaxs = "i", 
      type = "o", col = col, pch = 16)
-mtext("  Parmi les n(t) tests interprétables recherchant la mutation
-  Intervalle de confiance binomial sur ce nombre de tests n(t)", side = 3, cex = 0.6, adj = 0, line = -1)
+mtext("  Parmi les n(t) = C0(t) + C1(t) tests interprétables recherchant la mutation
+  Intervalle de confiance binomial sur ce nombre de tests n(t)
+  
+  Attention : les données publiques sont données partagées déjà lissées sur 7j", side = 3, cex = 0.7, adj = 0, line = -1)
 mtext("date", line = 2, side = 1) 
   axis(2, at = seq(0, 1, by = 0.1))
   axis(4, at = seq(0, 1, by = 0.1))
@@ -428,6 +565,95 @@ for(reg in unique.noNA(dat.Regions$reg_name)){
 
 ```
 
+
+
+
+```{r figRegionsMapPropC0, fig.width=10, fig.height=15}
+
+# Function to plot one region
+# We set et all parameters here
+plotRegC0 <- function(reg, xmin = "2021-11-01", ...){
+  dat <- dat.Regions[which(dat.Regions$reg_name == reg & dat.Regions$date2 >= xmin), ]
+  
+  plotMut0(dat$date2, dat$nb_C0, dat$nb_C1, col = col452R, thetit = "", 
+           ymin = 0.5*10^-2, ymax = 0.5, 
+           addNotes = FALSE)
+#ix <- which(dat.France$date2 > "2021-11-01")
+#plotMut0(dat.France[ix, "date2"], dat.France[ix, "nb_C0"], dat.France[ix, "nb_C1"], col = col452R, thetit = "L452R, France", ymin = 10^-2, ymax = 0.6)
+  title(main = reg)
+}
+
+
+#
+#ix <- which(dat.France$date2 > "2021-11-01")
+#plotMut0(dat.France[ix, "date2"], dat.France[ix, "nb_C0"], dat.France[ix, "nb_C1"], col = col452R, thetit = "L452R, France", ymin = 10^-2, ymax = 0.6)
+
+layout(matrix(1:15, ncol = 3, byrow = TRUE))
+
+# 1 Plot legend
+par(mar = c(0, 0, 0, 0))
+plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.2, 1), ylim = c(-1, 0.5))
+legend(x = 0, y = 0, legend = c("Nb tests positifs", "Nb tests criblés", "Nb tests interprétables E484K", "Nb tests interprétables E484Q", "Nb tests interprétables L452R"), 
+         col = c(colTot, colTotCrib, col484K, col484Q, col452R), 
+         #pch = 16, 
+         lty = 1, box.col = gray(0, 0), bty = "n", cex = 1)
+
+# 2 HDF
+#layout(1)
+plotRegC0("Hauts-de-France")
+
+
+# 3 Plot credits
+par(mar = c(0, 0, 0, 0))
+plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.1, 1), ylim = c(-1, 1))
+text(0, 0, "@flodebarre 
+
+Data:
+https://www.data.gouv.fr/fr/datasets/
+donnees-de-laboratoires-pour-le-
+depistage-indicateurs-sur-les-mutations/
+
+Code: https://github.com/flodebarre/
+nouveauCriblage/blob/main/scripts/mutations.Rmd
+", adj = 0, cex = 0.8, family = "mono")
+
+# 4 NOR
+plotRegC0("Normandie")
+
+# 5 IDF
+plotRegC0("Île-de-France")
+
+# 6 GE
+plotRegC0("Grand Est")
+
+# 7 BRE
+plotRegC0("Bretagne")
+
+# 8 CVL
+plotRegC0("Centre-Val de Loire")
+
+# 9 BFC
+plotRegC0("Bourgogne-Franche-Comté")
+
+# 10 PDL
+plotRegC0("Pays de la Loire")
+
+# 11 ARA
+plotRegC0("Auvergne-Rhône-Alpes")
+
+# 12 PACA
+plotRegC0("Provence-Alpes-Côte d'Azur")
+
+# 13 NAQ
+plotRegC0("Nouvelle-Aquitaine")
+
+# 14 OCC
+plotRegC0("Occitanie")
+
+# 15 COR
+plotRegC0("Corse")
+```
+
 ### Departements
 
 ```{r}
@@ -450,16 +676,16 @@ for(dep in sort(unique.noNA(dat.Deps$departement))){
 ```
 
 ```{r}
-dep <- "Alpes-Maritimes"
-dat <- dat.Deps[dat.Deps$departement == dep, ]
+dep <- "Val-de-Marne"
+dat <- dat.Deps[which(dat.Deps$departement == dep & dat.Deps$date2 >= "2021-11-01"), ]
   plotCaseMut(time = dat$date2, test0 = dat$nb_B0, test1 = dat$nb_B1, col = col484Q, thetit = paste0("E484Q, ", dep))
   plotCaseMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", dep))
   plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", dep))
+  plotMut0(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", dep), ymin = 0.001, ymax = 0.5)
   plotCaseMut(time = dat$date2, test0 = dat$nb_A0, test1 = dat$nb_A1, col = col484K, thetit = paste0("E484K, ", dep))
 ```
 
 ## Geographic
-
 ### L452R 
 
 Source idea map: [Le Monde map](https://www.lemonde.fr/les-decodeurs/article/2020/05/05/coronavirus-age-mortalite-departements-pays-suivez-l-evolution-de-l-epidemie-en-cartes-et-graphiques_6038751_4355770.html) [| archived](https://archive.is/eJ68m)
@@ -581,6 +807,197 @@ legend("topright", legend = c("Proportion L452R, < 50% le dernier jour", "≥ 50
 legend("topright", legend = c("", paste0("Données tracées si au moins ", 100*thrp, "% des cas criblés
 et au moins ", thrntot, " criblages sur la semaine. 
 Itv confiance sur nb crib. moyen 7 derniers jours.")), cex = cexLegend, bty = "n")
+```
+
+### Absence L452R 
+
+Source idea map: [Le Monde map](https://www.lemonde.fr/les-decodeurs/article/2020/05/05/coronavirus-age-mortalite-departements-pays-suivez-l-evolution-de-l-epidemie-en-cartes-et-graphiques_6038751_4355770.html) [| archived](https://archive.is/eJ68m)
+
+```{r}
+thrp <- 0.1
+thrntot <- 30
+
+drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thrntot/7, colMaj = col452R.complement, scale = "logit", ymin = 1*10^(-3), ymax = 0.5){
+  # depDat: dataset for this departement
+  # x: x position of the bottom left corner
+  # y: y position of the bottom left corner
+  # dxy: rectangle size c(dx, dy)
+  # col: main color
+  # thr.p: threshold to plot criblage data, minimum proportion of cases
+  # thr.n: threshold in terms of number of tests done
+  # scale: type of scale (logit or linear)
+  
+  relTime <- (as.numeric(depDat$time) - min(as.numeric(depDat$time)))/(max(as.numeric(depDat$time)) - min(as.numeric(depDat$time)))
+  test0 <- depDat$nb_C0
+  test1 <- depDat$nb_C1
+  
+  denom <- 7
+  n <- (test1 + test0) / denom
+  p <- test0 / (test1 + test0)
+  
+  scale.xy <- function(yv, z1, z2, zmin = 0, zmax = 1){
+    # Put y on the (0, 1) scale
+    z <- (yv - zmin)/(zmax - zmin)
+    # z is between 0 and 1 ; can go beyond with the confidence interval -> crop
+    z[z < 0] <- 0
+    z[z > 1] <- 1
+    # Rescale z on the z1, z2 scale
+    z1 + (z2 - z1) * z
+  }
+  
+  # Compute new values on the new scale
+  chgScale <- function(Z){
+    out <- NA # Initialize output, have NA if scale not properly written
+    if(scale == "logit"){
+#      print("begin")
+#      print(Z)
+      # Crop values, can be outside of (0, 1) when confidence interval
+      pf <- Z
+#      print(pf)
+#      cat("lower than ymin", pf[pf < ymin], "\n")
+#      cat("greater than ymax", pf[pf > ymax])
+      pf[pf < ymin] <- ymin
+      pf[pf > ymax] <- ymax
+#      print(pf)
+      # Compute logit
+      out <- log(pf /(1-pf)) # Logit scale
+#      print("coucou1")
+    }
+    if(scale == "linear"){
+      out <- p # Linear scale, no change
+    }
+    out
+  }
+
+  
+  # Computation of the confidence interval
+  deltaItv <- 1.96 * sqrt(p * (1-p) / n)
+  keepPts <- !is.na(deltaItv) & (depDat$tx_crib/100 >= thr.p) & (n >= thr.n)
+  
+  if(any(keepPts)){
+  #  print("coucou")
+      
+  # Remove points for which the itv cannot be computed
+  # and point with not enough criblage
+  deltaItv <- deltaItv[keepPts]
+  pp <- p[keepPts]
+  rT <- relTime[keepPts]
+  
+  # Get confidence interval values
+  itvm <- pp - deltaItv
+  itvM <- pp + deltaItv
+  
+  # Crop confidence interval values to the plot range
+  
+  # Color depends on whether main mutation
+  if(pp[length(pp)] > 0.5){
+    thecol <- colMaj
+  }else{
+    thecol <- col
+  }
+
+#print(scale.xy(rT, x, x + dxy[1]))
+#print(pp)
+#print(pp - deltaItv)
+#print(chgScale(pp - deltaItv))
+#print(chgScale)
+#print(scale.xy(chgScale(pp - deltaItv), y, y + dxy[2], zmin = chgScale(ymin), zmax = chgScale(ymax)))
+
+  arrows(x0 = scale.xy(rT, x, x + dxy[1]), 
+         x1 = scale.xy(rT, x, x + dxy[1]), 
+         y0 = scale.xy(chgScale(pp - deltaItv), y, y + dxy[2], zmin = chgScale(ymin), zmax = chgScale(ymax)), 
+         y1 = scale.xy(chgScale(pp + deltaItv), y, y + dxy[2], zmin = chgScale(ymin), zmax = chgScale(ymax)), 
+         code = 0, 
+         lwd = 1, 
+         col = adjustcolor(thecol, alpha.f = 0.5), 
+         lend = 1)
+  
+#  print(pp)
+#  print(chgScale(pp))
+#  print(chgScale(ymin))
+#  print(chgScale(ymax))
+
+    points(scale.xy(rT, x, x + dxy[1]), 
+         scale.xy(yv = chgScale(pp), y, y + dxy[2], zmin = chgScale(ymin), zmax = chgScale(ymax)), 
+         type = "p", col = thecol, pch = 16, cex = 0.2, lwd = 0.7)
+  
+  }
+}
+
+  drawRec0(depDat, x = round(geog[i, "x"], rr), y = round(geog[i, "y"], rr), dxy = ddr, col = col452R)
+
+```
+
+```{r figMapDepAbsL452R, fig.width = 7, fig.height = 9}
+geog <- read.csv("../data/position_deps.csv", header = FALSE)
+names(geog) <- c("x", "y", "dep", "shortName")
+rr <- 2 # Rounding factor
+
+d1 <- c(5.367367157581877, 1.008996513422371)
+d2 <- c(6.203498009030808, 1.7266142092327605)
+dd <- d2 - d1
+ddr <- round(dd,rr)
+
+initDate <- "2021-11-01"
+ymin <- 1*10^(-3)
+ymax <- 0.5
+
+par(mar = rep(0.2, 4) + c(2, 0, 2, 0))
+# Initialize plot with rect positions
+plot(c(round(geog$x, rr), round(geog$x, rr) + ddr[1]), c(round(geog$y, rr), round(geog$y, rr) + ddr[2]), type = "n", asp = 1, axes = FALSE, xlab = "", ylab = "")
+
+# Add titles of the plots
+text(x = round(geog$x, rr) + ddr[1]/2, y = round(geog$y, rr) + ddr[2], labels = paste0(geog$shortName, "(", geog$dep, ")"), bg = "white", adj = c(0.5, -0.4), cex = 0.45)
+
+for(i in seq_len(nrow(geog))){
+  # Draw rectangle
+  rect(xleft = round(geog[i, "x"], rr), ybottom = round(geog[i, "y"], rr), xright = round(geog[i, "x"], rr) + ddr[1], ytop = round(geog[i, "y"], rr) + ddr[2], lwd = 0.5, border = gray(0.6))
+  
+  # Select departement data
+  depDat <- dat.Deps[which(dat.Deps$dep == geog[i, "dep"] & dat.Deps$date2 >= initDate), ]
+  
+  # Horizontal line for 0.5
+ #  lines(c(round(geog[i, "x"], rr), round(geog[i, "x"], rr) + ddr[1]), rep(round(geog[i, "y"], rr) + ddr[2]/2, 2), lty = 1, col = gray(0.6), lwd = 0.5)
+  
+  # Draw curve
+  drawRec0(depDat, x = round(geog[i, "x"], rr), y = round(geog[i, "y"], rr), dxy = ddr, col = col452R, 
+           ymin = ymin, ymax = ymax)
+
+#    readline(prompt="Press [enter] to continue")
+
+}
+
+
+#drawRec(depDat, x = 5.73820184045573, y = 7.01837788404748, dxy = ddr, col = col452R)
+
+minDay <- format(as.Date(initDate), "%d %b")
+maxDay <- format(max(dat.Deps$date2), "%d %b")
+
+
+xP <- 1.34031283936975
+yP <- 15.0106959818622
+cexLeg <- 0.45
+text(x = xP, y = yP, adj = c(1, 0), labels = ymin, cex = 0.4)
+text(x = xP, y = yP + ddr[2], adj = c(1, 0.5), labels = ymax, cex = cexLeg)
+
+text(x = c(xP, xP + ddr[1]), y = c(yP, yP), adj = c(0.5, 1.5), labels = c(minDay, maxDay), cex = cexLeg)
+
+title("Absence de L452R")
+
+  mtext("  @flodebarre
+  Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
+  Code : https://github.com/flodebarre/nouveauCriblage
+  Idée carte : Les Decodeurs, Le Monde https://tinyurl.com/carteFRDecLM", side = 1, line = 1, cex = 0.6, col = gray(0.5), adj = 0)
+  
+cexLegend <- 0.6
+#legend("topright", legend = c("Proportion L452R, < 50% le dernier jour", "≥ 50% le dernier jour"), cex = cexLegend, bty = "n", col = c(col452R, col452R.complement), lty = 1, pch = 16)
+legend("topright", legend = c(paste0("Données tracées si au moins ", 100*thrp, "% des cas criblés
+et au moins ", thrntot, " criblages sur la semaine. 
+Itv confiance sur nb crib. moyen 7 derniers jours.
+
+Attention : 
+- les données publiques sont lissées, ce qui atténue le signal
+- il y a de moins en moins de criblage dans les données publiques")), cex = cexLegend, bty = "n")
 ```
 
 ### E484K/Q
