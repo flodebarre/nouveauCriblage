@@ -142,6 +142,9 @@ dat.France$date1 <- as.Date(substring(dat.France$semaine, 1, 10))
 dat.France$date2 <- as.Date(substring(dat.France$semaine, 12, 21))
 # Rewrite time as days since beginning of the data
 dat.France$time <- dat.France$date2 - min(dat.France$date2)
+
+# Mid-interval date
+dat.France$dateMid <- dat.France$date2 - 3
 ```
 
 
@@ -151,6 +154,9 @@ dat.Regions$date1 <- as.Date(substring(dat.Regions$semaine, 1, 10))
 dat.Regions$date2 <- as.Date(substring(dat.Regions$semaine, 12, 21))
 # Rewrite time as days since beginning of the data
 dat.Regions$time <- dat.Regions$date2 - min(dat.Regions$date2)
+
+# Mid-interval date
+dat.Regions$dateMid <- dat.Regions$date2 - 3
 ```
 
 
@@ -160,6 +166,9 @@ dat.Deps$date1 <- as.Date(substring(dat.Deps$semaine, 1, 10))
 dat.Deps$date2 <- as.Date(substring(dat.Deps$semaine, 12, 21))
 # Rewrite time as days since beginning of the data
 dat.Deps$time <- dat.Deps$date2 - min(dat.Deps$date2)
+
+# Mid-interval date
+dat.Deps$dateMid <- dat.Deps$date2 - 3
 ```
 
 
@@ -189,6 +198,15 @@ testDat <- function(dat){
 testDat(dat.France)
 testDat(dat.Regions)
 testDat(dat.Deps)
+```
+
+# (tmp Extractions)
+
+```{r}
+tmp <- dat.Regions[which(dat.Regions$reg_name == "Île-de-France"), ]
+
+# dim(tmp)
+write.csv(tmp, file = "../data/extractionIDF.csv", col.names = NULL)
 ```
 
 # Plots 
@@ -228,22 +246,55 @@ plotNbCrib <- function(dat, quot = TRUE, addLegend = TRUE, tp = "l", lwd = 1.5){
 }
 ```
 
-
 ```{r}
+#
+plotTauxCrib <- function(dat){
+  par(las = 1)
+  par(mar = c(2, 4, 3, 4))
+
+  plot(dat$dateMid, dat$tx_crib, ylim = c(0, 100), type = "l", lwd = 3, col = gray(0.3), frame.plot = FALSE, 
+       xlab = "", ylab = "", yaxs = "i")
+  axis(4)
+}
+
+```
+
+
+
+```{r NbCribFrance}
 plotNbCrib(dat.France)
 title(main = "France")
+```
 
-for(reg in unique.noNA(dat.Regions$reg_name)){
+```{r TxCribFrance}
+plotTauxCrib(dat.France[dat.France$dateMid >= "2021-11-15", ])
+title(main = "France")
+
+```
+
+
+```{r NbCribRegions}
+# Plot all regions in single plots
+# for(reg in unique.noNA(dat.Regions$reg_name)){
+#   dat <- dat.Regions[dat.Regions$reg_name == reg, ]
+#   plotNbCrib(dat, addLegend = FALSE)
+#   title(main = reg)
+# }
+```
+
+
+```{r}
+# Function to plot one region
+plotReg <- function(reg){
   dat <- dat.Regions[dat.Regions$reg_name == reg, ]
   plotNbCrib(dat, addLegend = FALSE)
   title(main = reg)
 }
 
-
 # Function to plot one region
-plotReg <- function(reg){
-  dat <- dat.Regions[dat.Regions$reg_name == reg, ]
-  plotNbCrib(dat, addLegend = FALSE)
+plotRegTx <- function(reg){
+  dat <- dat.Regions[dat.Regions$reg_name == reg & dat.Regions$dateMid > "2021-11-01", ]
+  plotTauxCrib(dat)
   title(main = reg)
 }
 
@@ -324,6 +375,73 @@ plotReg("Corse")
 
 ```
 
+```{r figRegionsMapTauxCriblage, fig.width=10, fig.height=10}
+
+layout(matrix(1:15, ncol = 3, byrow = TRUE))
+
+# 1 Plot legend
+par(mar = c(0, 0, 0, 0))
+plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.2, 1), ylim = c(-1, 0.5))
+text(0, 0, "Pourcentage de tests criblés", adj = c(0, 0), cex = 1.3)
+text(0, 0, "(les données publiques sont déjà lissées)", adj = c(0, 2))
+# 2 HDF
+plotRegTx("Hauts-de-France")
+
+# 3 Plot credits
+par(mar = c(0, 0, 0, 0))
+plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.1, 1), ylim = c(-1, 1))
+text(0, 0, "@flodebarre 
+
+Data:
+https://www.data.gouv.fr/fr/datasets/
+donnees-de-laboratoires-pour-le-
+depistage-indicateurs-sur-les-mutations/
+
+Code: https://github.com/flodebarre/
+nouveauCriblage/blob/main/scripts/mutations.Rmd
+", adj = 0, cex = 0.8, family = "mono")
+
+# 4 NOR
+plotRegTx("Normandie")
+
+# 5 IDF
+plotRegTx("Île-de-France")
+
+# 6 GE
+plotRegTx("Grand Est")
+
+# 7 BRE
+plotRegTx("Bretagne")
+
+# 8 CVL
+plotRegTx("Centre-Val de Loire")
+
+# 9 BFC
+plotRegTx("Bourgogne-Franche-Comté")
+
+# 10 PDL
+plotRegTx("Pays de la Loire")
+
+# 11 ARA
+plotRegTx("Auvergne-Rhône-Alpes")
+
+# 12 PACA
+plotRegTx("Provence-Alpes-Côte d'Azur")
+
+# 13 NAQ
+plotRegTx("Nouvelle-Aquitaine")
+
+# 14 OCC
+plotRegTx("Occitanie")
+
+# 15 COR
+plotRegTx("Corse")
+#[1] "Auvergne-Rhône-Alpes"       "Hauts-de-France"            "Provence-Alpes-Côte d'Azur" "Grand Est"                 
+# [5] "Occitanie"                  "Normandie"                  "Nouvelle-Aquitaine"         "Centre-Val de Loire"       
+# [9] "Corse"                      "Bourgogne-Franche-Comté"    "Bretagne"                   "Pays de la Loire"  
+
+```
+
 
 
 ## Proportions / Nb tests
@@ -374,7 +492,7 @@ Code : https://github.com/flodebarre/nouveauCriblage", side = 1, line = 3.5, cex
 
 
 ```{r}
-plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 10^-6, quot = TRUE, scale = "logit", addNotes = TRUE){
+plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 10^-6, quot = TRUE, scale = "logit", addNotes = TRUE, addDeliss = FALSE, test0dl, test1dl, coldl = "#FFD390"){
   # -- here showing n0/(n0+n1) --
   # time: vector of values of times of sample collection
   # test0: vector of numbers of tests with value 0
@@ -397,10 +515,24 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
   deltaItv <- deltaItv[keepPts]
   pp <- p[keepPts]
   
+  if(addDeliss){
+    ndl <- (test1dl + test0dl) / denom
+    pdl <- test0dl / (test0dl + test1dl)
+    deltaItvdl <- 1.96 * sqrt(pdl * (1-pdl) / ndl)
+    keepPtsdl <- !is.na(deltaItvdl) 
+    # Remove points for which the interval cannot be computed
+    deltaItvdl <- deltaItvdl[keepPtsdl]
+    ppdl <- pdl[keepPtsdl]
+  }
+
   # Compute new values on the new scale
-  changeScale <- function(p){
+  changeScale <- function(p, confInt = FALSE){
     out <- NA # Initialize output, have NA if scale not properly written
     if(scale == "logit"){
+      # Make sure that p is between 0 and 1 (can be different with conf int)
+      p[p < ymin] <- max(0, 0.5*ymin)
+      p[p > ymax] <- 2*ymax
+      
       out <- log(p /(1-p)) # Logit scale
     }
     if(scale == "linear"){
@@ -456,11 +588,34 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
     }
   }
   
+  
+  # If add "delissees" data
+  if(addDeliss){
+    points(as.Date(time), changeScale(pdl), type = "p", col = coldl, pch = 16)
+
+    xxdl <- base::as.Date(time)[keepPtsdl]
+
+    # Add confidence interval as arrows
+    arrows(x0 = xxdl, 
+         x1 = xxdl, 
+         y0 = changeScale(ppdl - deltaItvdl), 
+         y1 = changeScale(ppdl + deltaItvdl), 
+         code = 0, 
+         lwd = 3, 
+         col = adjustcolor(coldl, alpha.f = 0.5), 
+         lend = 1)
+  }
+  
 
   if(addNotes){
   # Add note about data and code provenance
   mtext("Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
 Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/mutations.Rmd", side = 1, line = 3.5, cex = 0.5, col = gray(0.5), adj = 0, family = "mono")
+    
+    par(xpd = TRUE)
+    legend("topleft", col = c(col, coldl), pch = 16, legend = c("Données publiques, lissées", "Données délissées"), 
+           bty = "n", horiz = TRUE, cex = 0.9, inset = c(0, -0.05))
+    par(xpd = FALSE)
   }
 
   # Axes: 
@@ -497,9 +652,12 @@ layout(1)
 ix <- which(dat.France$date2 >= "2021-11-01")
 plotMut0(dat.France[ix, "date2"], dat.France[ix, "nb_C0"], dat.France[ix, "nb_C1"], col = col452R, thetit = "Proportion des tests criblés sans la mutation L452R, France", ymin = 10^-2, ymax = 0.6)
 
+
+#plotRegC0("Île-de-France", addNotes = TRUE)
+
 ```
 
-```{r}
+```{r funcplotCaseMut}
 plotCaseMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE){
   # dat: dataset to be plotted
   # quot: boolean to decide whether to plot the daily values (averaged over 7 days) [TRUE], or the sum over the last 7 days [FALSE]
@@ -557,7 +715,7 @@ plotCaseMut(dat.France$date2, dat.France$nb_C0, dat.France$nb_C1, col = col452R,
 
 ### Regions 
 
-```{r eval = FALSE}
+```{r regionsPlot, eval = FALSE}
 for(reg in unique.noNA(dat.Regions$reg_name)){
   dat <- dat.Regions[dat.Regions$reg_name == reg, ]
   plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", reg), ymax = 1)
@@ -565,6 +723,10 @@ for(reg in unique.noNA(dat.Regions$reg_name)){
 
 ```
 
+```{r}
+# Source function to turn back into raw data 
+source("delissage.R")
+```
 
 
 
@@ -575,9 +737,19 @@ for(reg in unique.noNA(dat.Regions$reg_name)){
 plotRegC0 <- function(reg, xmin = "2021-11-01", ...){
   dat <- dat.Regions[which(dat.Regions$reg_name == reg & dat.Regions$date2 >= xmin), ]
   
+  # Delissage
+  tmp <- delissage(reg)
+  tmp <- tmp[which(tmp$date2 >= xmin), ]
+  
+  # Export
+  regNB <- unique(dat$reg)
+  write.csv(tmp, file = paste0("../data/deliss_reg-", regNB, ".csv"))
+  
   plotMut0(dat$date2, dat$nb_C0, dat$nb_C1, col = col452R, thetit = "", 
            ymin = 0.5*10^-2, ymax = 0.5, 
-           addNotes = FALSE)
+           addDeliss = TRUE, 
+           test0dl = tmp$nb_C0_dl, 
+           test1dl = tmp$nb_C1_dl, ...)
 #ix <- which(dat.France$date2 > "2021-11-01")
 #plotMut0(dat.France[ix, "date2"], dat.France[ix, "nb_C0"], dat.France[ix, "nb_C1"], col = col452R, thetit = "L452R, France", ymin = 10^-2, ymax = 0.6)
   title(main = reg)
@@ -621,6 +793,8 @@ nouveauCriblage/blob/main/scripts/mutations.Rmd
 plotRegC0("Normandie")
 
 # 5 IDF
+# 
+#layout(1)
 plotRegC0("Île-de-France")
 
 # 6 GE
@@ -653,6 +827,16 @@ plotRegC0("Occitanie")
 # 15 COR
 plotRegC0("Corse")
 ```
+
+```{r IDF}
+plotRegC0("Île-de-France")
+```
+
+```{r predict}
+
+source("projections.R")
+```
+
 
 ### Departements
 
@@ -691,7 +875,7 @@ dat <- dat.Deps[which(dat.Deps$departement == dep & dat.Deps$date2 >= "2021-11-0
 Source idea map: [Le Monde map](https://www.lemonde.fr/les-decodeurs/article/2020/05/05/coronavirus-age-mortalite-departements-pays-suivez-l-evolution-de-l-epidemie-en-cartes-et-graphiques_6038751_4355770.html) [| archived](https://archive.is/eJ68m)
 
 ```{r}
-thrp <- 0.1
+thrp <- 0.15
 thrntot <- 30
 
 drawRec <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thrntot/7, colMaj = col452R.complement){
@@ -814,7 +998,7 @@ Itv confiance sur nb crib. moyen 7 derniers jours.")), cex = cexLegend, bty = "n
 Source idea map: [Le Monde map](https://www.lemonde.fr/les-decodeurs/article/2020/05/05/coronavirus-age-mortalite-departements-pays-suivez-l-evolution-de-l-epidemie-en-cartes-et-graphiques_6038751_4355770.html) [| archived](https://archive.is/eJ68m)
 
 ```{r}
-thrp <- 0.1
+thrp <- 0.125
 thrntot <- 30
 
 drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thrntot/7, colMaj = col452R.complement, scale = "logit", ymin = 1*10^(-3), ymax = 0.5, yvals = c(0.001, 0.01, 0.1, 0.5), ylabels = FALSE){
@@ -964,7 +1148,7 @@ d2 <- c(6.203498009030808, 1.7266142092327605)
 dd <- d2 - d1
 ddr <- round(dd,rr)
 
-initDate <- "2021-11-15"
+initDate <- "2021-12-01"
 ymin <- 1*10^(-3)
 ymax <- 0.5
 

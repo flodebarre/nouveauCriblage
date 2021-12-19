@@ -45,6 +45,7 @@ dx <- 10
 
 # Figure #####
 par(mgp = c(2.5, 0.25, 0))
+par(mar = c(5, 2, 4, 2))
 
 # Initialize plot
 plot(NULL, pch = 20, type = "o", las = 1, axes = F, xlab = "", ylab = "",
