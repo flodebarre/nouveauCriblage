@@ -140,11 +140,12 @@ unique(dat.Deps[which(is.na(dat.Deps$departement)), "dep"])
 # Format date
 dat.France$date1 <- as.Date(substring(dat.France$semaine, 1, 10))
 dat.France$date2 <- as.Date(substring(dat.France$semaine, 12, 21))
-# Rewrite time as days since beginning of the data
-dat.France$time <- dat.France$date2 - min(dat.France$date2)
 
 # Mid-interval date
 dat.France$dateMid <- dat.France$date2 - 3
+
+# Rewrite time as days since beginning of the data
+dat.France$time <- dat.France$dateMid - min(dat.France$date2)
 ```
 
 
@@ -1187,7 +1188,7 @@ for(i in seq_len(nrow(geog))){
 #drawRec(depDat, x = 5.73820184045573, y = 7.01837788404748, dxy = ddr, col = col452R)
 
 minDay <- format(as.Date(initDate), "%d %b")
-maxDay <- format(max(dat.Deps$date2), "%d %b")
+maxDay <- format(max(dat.Deps$dateMid), "%d %b")
 
 
 # xP <- 1.34031283936975
