@@ -11,6 +11,10 @@ editor_options:
   chunk_output_type: console
 ---
 
+
+**TODO Check dates2 dateMid for delissage**
+
+
 ```{r, eval=FALSE}
 rm(list = ls()) # I don't care what you think
 for(i in dev.list()) dev.off()
@@ -44,6 +48,7 @@ colTotCrib <- gray(0)#colMut[8]
 colTot <- colMut[7]
 
 col452R.complement <- "#b37570"
+colDL <- "#FFD390" # Données délissées
 ```
 
 ```{r}
@@ -493,7 +498,7 @@ Code : https://github.com/flodebarre/nouveauCriblage", side = 1, line = 3.5, cex
 
 
 ```{r}
-plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 10^-6, quot = TRUE, scale = "logit", addNotes = TRUE, addDeliss = FALSE, test0dl, test1dl, coldl = "#FFD390"){
+plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 10^-6, quot = TRUE, scale = "logit", addNotes = TRUE, addDeliss = FALSE, timedl, test0dl, test1dl, coldl = colDL){
   # -- here showing n0/(n0+n1) --
   # time: vector of values of times of sample collection
   # test0: vector of numbers of tests with value 0
@@ -545,8 +550,16 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
   par(mar = c(5, 4, 4, 4))
   par(las = 1, mgp = c(2.5, 0.3, 0), tck = -0.01)
   
+  xmin <- min(as.Date(time), na.rm = TRUE)
+  xmax <- max(as.Date(time), na.rm = TRUE)
+  if(addDeliss){
+     xmax <- xmax + 3
+  }
+  
   plot(as.Date(time), changeScale(p), 
-       ylim = c(changeScale(ymin), changeScale(ymax)), frame.plot = FALSE, 
+       ylim = c(changeScale(ymin), changeScale(ymax)), 
+       xlim = c(xmin, xmax),
+       frame.plot = FALSE, 
        xlab = "", ylab = "", 
        type = "p", col = col, pch = 16, 
        axes = FALSE)
@@ -592,9 +605,9 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
   
   # If add "delissees" data
   if(addDeliss){
-    points(as.Date(time), changeScale(pdl), type = "p", col = coldl, pch = 16)
+    points(as.Date(timedl), changeScale(pdl), type = "p", col = coldl, pch = 16)
 
-    xxdl <- base::as.Date(time)[keepPtsdl]
+    xxdl <- base::as.Date(timedl)[keepPtsdl]
 
     # Add confidence interval as arrows
     arrows(x0 = xxdl, 
@@ -614,8 +627,8 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
 Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/mutations.Rmd", side = 1, line = 3.5, cex = 0.5, col = gray(0.5), adj = 0, family = "mono")
     
     par(xpd = TRUE)
-    legend("topleft", col = c(col, coldl), pch = 16, legend = c("Données publiques, lissées", "Données délissées"), 
-           bty = "n", horiz = TRUE, cex = 0.9, inset = c(0, -0.05))
+#    legend("topleft", col = c(col, coldl), pch = 16, legend = c("Données publiques, lissées", "Données délissées"), 
+#           bty = "n", horiz = TRUE, cex = 0.9, inset = c(0, -0.05))
     par(xpd = FALSE)
   }
 
@@ -650,8 +663,8 @@ Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/mutations
 }
 
 layout(1)
-ix <- which(dat.France$date2 >= "2021-11-01")
-plotMut0(dat.France[ix, "date2"], dat.France[ix, "nb_C0"], dat.France[ix, "nb_C1"], col = col452R, thetit = "Proportion des tests criblés sans la mutation L452R, France", ymin = 10^-2, ymax = 0.6)
+ix <- which(dat.France$dateMid >= "2021-11-01")
+plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C0"], dat.France[ix, "nb_C1"], col = col452R, thetit = "Proportion des tests criblés sans la mutation L452R, France", ymin = 10^-2, ymax = 0.6)
 
 
 #plotRegC0("Île-de-France", addNotes = TRUE)
@@ -736,7 +749,7 @@ source("delissage.R")
 # Function to plot one region
 # We set et all parameters here
 plotRegC0 <- function(reg, xmin = "2021-11-01", ...){
-  dat <- dat.Regions[which(dat.Regions$reg_name == reg & dat.Regions$date2 >= xmin), ]
+  dat <- dat.Regions[which(dat.Regions$reg_name == reg & dat.Regions$dateMid >= xmin), ]
   
   # Delissage
   tmp <- delissage(reg)
@@ -746,11 +759,13 @@ plotRegC0 <- function(reg, xmin = "2021-11-01", ...){
   regNB <- unique(dat$reg)
   write.csv(tmp, file = paste0("../data/deliss_reg-", regNB, ".csv"))
   
-  plotMut0(dat$date2, dat$nb_C0, dat$nb_C1, col = col452R, thetit = "", 
+  plotMut0(dat$dateMid, dat$nb_C0, dat$nb_C1, col = col452R, thetit = "", 
            ymin = 0.5*10^-2, ymax = 0.5, 
            addDeliss = TRUE, 
+           timedl = tmp$date2,
            test0dl = tmp$nb_C0_dl, 
-           test1dl = tmp$nb_C1_dl, ...)
+           test1dl = tmp$nb_C1_dl, 
+           addNotes = FALSE,...)
 #ix <- which(dat.France$date2 > "2021-11-01")
 #plotMut0(dat.France[ix, "date2"], dat.France[ix, "nb_C0"], dat.France[ix, "nb_C1"], col = col452R, thetit = "L452R, France", ymin = 10^-2, ymax = 0.6)
   title(main = reg)
@@ -766,10 +781,10 @@ layout(matrix(1:15, ncol = 3, byrow = TRUE))
 # 1 Plot legend
 par(mar = c(0, 0, 0, 0))
 plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.2, 1), ylim = c(-1, 0.5))
-# legend(x = 0, y = 0, legend = c("Nb tests positifs", "Nb tests criblés", "Nb tests interprétables E484K", "Nb tests interprétables E484Q", "Nb tests interprétables L452R"), 
-#          col = c(colTot, colTotCrib, col484K, col484Q, col452R), 
-#          #pch = 16, 
-#          lty = 1, box.col = gray(0, 0), bty = "n", cex = 1)
+legend(x = -0.15, y = 0, legend = c("Données publiques, partagées déjà lissées", "Données dé-lissées"), 
+          col = c(col452R, colDL), 
+          pch = 16, 
+          box.col = gray(0, 0), bty = "n", cex = 1)
 
 # 2 HDF
 #layout(1)
@@ -1002,7 +1017,7 @@ Source idea map: [Le Monde map](https://www.lemonde.fr/les-decodeurs/article/202
 thrp <- 0.125
 thrntot <- 30
 
-drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thrntot/7, colMaj = col452R.complement, scale = "logit", ymin = 1*10^(-3), ymax = 0.5, yvals = c(0.001, 0.01, 0.1, 0.5), ylabels = FALSE){
+drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thrntot/7, colMaj = col452R.complement, scale = "logit", ymin = 1*10^(-2), ymax = 1, yvals = c(0.01, 0.1, 0.5, 0.9, 0.99), ylabels = FALSE){
   # depDat: dataset for this departement
   # x: x position of the bottom left corner
   # y: y position of the bottom left corner
@@ -1038,16 +1053,10 @@ drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thr
   chgScale <- function(Z){
     out <- NA # Initialize output, have NA if scale not properly written
     if(scale == "logit"){
-#      print("begin")
-#      print(Z)
       # Crop values, can be outside of (0, 1) when confidence interval
       pf <- Z
-#      print(pf)
-#      cat("lower than ymin", pf[pf < ymin], "\n")
-#      cat("greater than ymax", pf[pf > ymax])
       pf[pf < ymin] <- ymin
       pf[pf > ymax] <- ymax
-#      print(pf)
       # Compute logit
       out <- log(pf /(1-pf)) # Logit scale
 #      print("coucou1")
@@ -1112,6 +1121,20 @@ drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thr
          code = 0, 
          lwd= 0.8
          )
+  
+  # 0.5 more visually striking
+  if(is.element(0.5, yvals)){
+    arrows(x0 = scale.xy(0, x, x + dxy[1]), 
+         x1 = scale.xy(1, x, x + dxy[1]), 
+         y0 = scale.xy(chgScale(0.5), y, y + dxy[2], zmin = chgScale(ymin), zmax = chgScale(ymax)), 
+         y1 = scale.xy(chgScale(0.5), y, y + dxy[2], zmin = chgScale(ymin), zmax = chgScale(ymax)), 
+         col = gray(0.8), 
+         lend = 1, 
+         code = 0, 
+         lwd= 2
+         )
+  }
+  
   # Add labels
   if(ylabels){
     dxx <- 0.1
@@ -1135,7 +1158,8 @@ drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thr
   }
 }
 
-#  drawRec0(depDat, x = round(geog[i, "x"], rr), y = round(geog[i, "y"], rr), dxy = ddr, col = col452R)
+# This is only here for testing new stuff quickly
+#drawRec0(depDat, x = round(geog[i, "x"], rr), y = round(geog[i, "y"], rr), dxy = ddr, col = col452R)
 
 ```
 
@@ -1150,8 +1174,9 @@ dd <- d2 - d1
 ddr <- round(dd,rr)
 
 initDate <- "2021-12-01"
-ymin <- 1*10^(-3)
-ymax <- 0.5
+ymin <- 1*10^(-2)
+ymax <- 0.9
+yvals <- c(0.01, 0.1, 0.5, 0.9)
 
 par(mar = rep(0.2, 4) + c(2, 0, 2, 0))
 # Initialize plot with rect positions
@@ -1178,7 +1203,8 @@ for(i in seq_len(nrow(geog))){
   }
   drawRec0(depDat, x = round(geog[i, "x"], rr), y = round(geog[i, "y"], rr), dxy = ddr, col = col452R, 
            ymin = ymin, ymax = ymax, 
-           ylabels = ylb)
+           ylabels = ylb, 
+           yvals = yvals)
 
 #    readline(prompt="Press [enter] to continue")
 
@@ -1201,10 +1227,10 @@ text(x = c(xP, xP + ddr[1]), y = c(yP, yP), adj = c(0.5, 1.5), labels = c(minDay
 
 title("Absence de L452R, échelle logit")
 
-  mtext("  @flodebarre
+  mtext(paste0("  @flodebarre, mise à jour ", Sys.Date(), "
   Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
   Code : https://github.com/flodebarre/nouveauCriblage
-  Idée carte : Les Decodeurs, Le Monde https://tinyurl.com/carteFRDecLM", side = 1, line = 1, cex = 0.6, col = gray(0.5), adj = 0)
+  Idée carte : Les Decodeurs, Le Monde https://tinyurl.com/carteFRDecLM"), side = 1, line = 1, cex = 0.525, col = gray(0.5), adj = 0, family = "mono")
   
 cexLegend <- 0.55
 #legend("topright", legend = c("Proportion L452R, < 50% le dernier jour", "≥ 50% le dernier jour"), cex = cexLegend, bty = "n", col = c(col452R, col452R.complement), lty = 1, pch = 16)
