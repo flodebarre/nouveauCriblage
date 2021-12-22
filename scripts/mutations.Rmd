@@ -30,7 +30,7 @@ Source of the data:
 
 ```{r}
 # Whether to download the data
-dlData <- FALSE
+dlData <- TRUE
 ```
 
 
@@ -532,7 +532,7 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
   
   if(addDeliss){
     dxx <- 3 # 3 more days if data délissées are added
-    ndl <- (test1dl + test0dl) / denom
+    ndl <- (test1dl + test0dl)
     pdl <- test0dl / (test0dl + test1dl)
     deltaItvdl <- 1.96 * sqrt(pdl * (1-pdl) / ndl)
     keepPtsdl <- !is.na(deltaItvdl) 
@@ -649,7 +649,7 @@ Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/mutations
     
     par(xpd = TRUE)
     if(addLegend){
-      legend("topleft", col = c(col, coldl), pch = 16, legend = c("Données publiques, lissées", "Données délissées"), bty = "n", horiz = TRUE, cex = 0.8, pt.cex = 0.9*c(cexL, 1), inset = c(0, -0.075))
+      legend("topleft", col = c(col, coldl), pch = 16, legend = c("Données publiques, publiées déjà lissées", "Données délissées"), bty = "n", horiz = TRUE, cex = 0.8, pt.cex = 0.9*c(cexL, 1), inset = c(0, -0.075))
     }
     par(xpd = FALSE)
   }
