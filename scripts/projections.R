@@ -111,7 +111,7 @@ plotEstimate <- function(first_date, col, cex.fit){
   polygon(x = c(xpred, rev(xpred)), y = c(myinvlogit(pred$fit - 1.96 * pred$se.fit), rev(myinvlogit(pred$fit + 1.96 * pred$se.fit))), col = adjustcolor(col, 0.4), border = NA)
   
   # Highlight the points used for the fit
-  points(a[sub, "time"], a[sub, "nb_C0"]/(a[sub, "nb_C1"] + a[sub, "nb_C0"]), pch = 16, type = "p", col = col, cex = cex.fit)
+  #points(a[sub, "time"], a[sub, "nb_C0"]/(a[sub, "nb_C1"] + a[sub, "nb_C0"]), pch = 16, type = "p", col = col, cex = cex.fit)
   
   # Return data frame of the prediction
   data.frame(xpred, pred)
@@ -124,8 +124,8 @@ plotEstimate <- function(first_date, col, cex.fit){
 col1 <- "#0000B1"
 col2 <- "#00AE63"
 # Number of days taken into account for the estimation
-n1 <- 5
-n2 <- 10
+n1 <- 10
+n2 <- 15
 # cex of the highlighted points
 cx1 <- 1.6
 cx2 <- 1.3
@@ -136,13 +136,26 @@ e2 <- plotEstimate(max(a$date2) - n2 + 1, col2, cex.fit = cx2)
 # Add the data points
 par(xpd = TRUE)
 # Proportion of C0
-points(suba$time, suba$nb_C0/(suba$nb_C1+suba$nb_C0), pch = 16, type = "p", col = thecol, cex = 0.8)
+points(suba$time, suba$nb_C0/(suba$nb_C1+suba$nb_C0), pch = 16, type = "p", col = thecol, cex = 1.1)
 par(xpd = FALSE)
+
+# CI
+pp <- suba$nb_C0/(suba$nb_C1+suba$nb_C0)
+nn <- (suba$nb_C1+suba$nb_C0)
+dci <- 1.96 * sqrt(pp * (1-pp)/nn)
+
+arrows(x0 = suba$time, 
+       x1 = suba$time, 
+       y0 = pp - dci, 
+       y1 = pp + dci, 
+       col = adjustcolor(thecol, 0.7), 
+       lwd = 5, lend = 1, 
+       code = 0)
 
 # Legend
 legend("topleft", box.lwd = 0, 
-       col = c(col1, col2), pch = 16, 
-       pt.cex = c(cx1, cx2),
+       col = c(col1, col2), pch = 15, 
+       pt.cex = 1, #c(cx1, cx2),
        legend = c(paste(n1, "derniers jours"), paste(n2, "derniers jours")), 
        title = "Ajustement sur les données des", cex = 0.8)
 #points(xpred, myinvlogit(pred$fit), type = "l")
@@ -208,4 +221,4 @@ names(dC)
 
 #-----------------------------------------------------
 # Source Plot
-source("JBMplot.R")
+#source("JBMplot.R")
