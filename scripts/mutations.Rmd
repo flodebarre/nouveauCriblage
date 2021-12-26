@@ -256,8 +256,11 @@ plotTauxCrib <- function(dat){
   par(las = 1)
   par(mar = c(2, 4, 3, 4))
 
-  plot(dat$dateMid, dat$tx_crib, ylim = c(0, 100), type = "l", lwd = 3, col = gray(0.3), frame.plot = FALSE, 
-       xlab = "", ylab = "", yaxs = "i")
+  plot(dat$dateMid, dat$tx_crib, ylim = c(0, 100), lwd = 3, col = gray(0.3), frame.plot = FALSE, 
+       xlab = "", ylab = "", yaxs = "i", type = "p", pch = 16)
+  # Show final point
+  i <- which(dat$dateMid == max(dat$dateMid, na.rm = TRUE))
+  points(dat$dateMid[i], dat$tx_crib[i], col = "red", pch = 16)
   axis(4)
 }
 
@@ -387,7 +390,8 @@ layout(matrix(1:15, ncol = 3, byrow = TRUE))
 par(mar = c(0, 0, 0, 0))
 plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.2, 1), ylim = c(-1, 0.5))
 text(0, 0, "Pourcentage de tests criblés", adj = c(0, 0), cex = 1.3)
-text(0, 0, "(les données publiques sont déjà lissées)", adj = c(0, 2))
+text(0, 0, "(les données publiques sont déjà lissées, 
+ce qui 'arrondit' les changements brutaux)", adj = c(0, 2))
 # 2 HDF
 plotRegTx("Hauts-de-France")
 
@@ -883,6 +887,116 @@ plotRegC0("Île-de-France", addNotes = TRUE, ymax = 1, ymin = 0, addLegend = TRU
 source("projections.R")
 ```
 
+#### Number tests, delisses
+
+```{r NbTestsCribDeliss}
+colCrib <- "#91D900"
+colTest <- gray(0.5)
+
+plotCribTest <- function(regname, minDate = "2021-11-15"){
+  
+  # Get region number
+  reg <- names(regs)[which(regs==regname)]
+  
+  # Load deliss data
+  datreg <- read.csv(paste0("../data/deliss_reg-", reg, ".csv"))
+
+  # Case data
+  dC <- datCases[which(datCases$cl_age90 == 0 & datCases$reg == reg & datCases$jour >= min(datreg$date2)), ]
+  
+  datreg <- datreg[datreg$date2 >= minDate, ]
+  dC <- dC[dC$jour >= minDate, ]
+  
+  par(mar = c(3, 3, 3, 3), xpd = TRUE, mgp = c(2.5, 0.5, 0))
+  lwdd <- 6
+  plot(as.Date(dC$jour), dC$P, xlim = as.Date(c(minDate, max(dC$jour))), 
+       ylim = c(0, 1.1*max(dC$P)), 
+       yaxs = "i", 
+       type = "h", lwd = lwdd, lend = 1, 
+       col = colTest, frame.plot = FALSE, 
+       xlab = "", ylab = "", axes = FALSE)
+  points(as.Date(datreg$date2), datreg$nb_C0_dl + datreg$nb_C1_dl, 
+         type = "h", lwd = lwdd, col = colCrib, lend = 1)
+  axis(2)
+  axis(4)
+  xx <- seq(as.Date(minDate), as.Date(max(dC$jour)), by = "day")
+  axis(1, at = xx, labels = format(xx, "%d/%m"), las = 2, cex.axis = 0.7, lwd = 0)
+  
+  title(regname)
+}
+
+
+```
+
+
+```{r}
+layout(matrix(1:15, ncol = 3, byrow = TRUE))
+
+# 1 Plot legend
+par(mar = c(0, 0, 0, 0))
+plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.2, 1), ylim = c(-1, 0.5))
+legend(x = -0.15, y = 0, legend = c("Nb de tests positifs du jour", "Nb de tests criblés et interprétables"), 
+          col = c(colTest, colCrib), 
+          pch = 16, 
+          box.col = gray(0, 0), bty = "n", cex = 1)
+
+# 2 HDF
+#layout(1)
+plotCribTest("Hauts-de-France")
+
+
+# 3 Plot credits
+par(mar = c(0, 0, 0, 0))
+plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.1, 1), ylim = c(-1, 1))
+text(0, 0, "@flodebarre 
+
+Data:
+https://www.data.gouv.fr/fr/datasets/
+donnees-de-laboratoires-pour-le-
+depistage-indicateurs-sur-les-mutations/
+
+Code: https://github.com/flodebarre/
+nouveauCriblage/blob/main/scripts/mutations.Rmd
+", adj = 0, cex = 0.8, family = "mono")
+
+# 4 NOR
+plotCribTest("Normandie")
+
+# 5 IDF
+# 
+#layout(1)
+plotCribTest("Île-de-France")
+
+# 6 GE
+plotCribTest("Grand Est")
+
+# 7 BRE
+plotCribTest("Bretagne")
+
+# 8 CVL
+plotCribTest("Centre-Val de Loire")
+
+# 9 BFC
+plotCribTest("Bourgogne-Franche-Comté")
+
+# 10 PDL
+plotCribTest("Pays de la Loire")
+
+# 11 ARA
+plotCribTest("Auvergne-Rhône-Alpes")
+
+# 12 PACA
+plotCribTest("Provence-Alpes-Côte d'Azur")
+
+# 13 NAQ
+plotCribTest("Nouvelle-Aquitaine")
+
+# 14 OCC
+plotCribTest("Occitanie")
+
+# 15 COR
+plotCribTest("Corse")
+```
 
 ### Departements
 
