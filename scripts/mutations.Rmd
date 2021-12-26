@@ -889,7 +889,7 @@ source("projections.R")
 
 #### Number tests, delisses
 
-```{r NbTestsCribDeliss}
+```{r}
 colCrib <- "#91D900"
 colTest <- gray(0.5)
 
@@ -907,7 +907,7 @@ plotCribTest <- function(regname, minDate = "2021-11-15"){
   datreg <- datreg[datreg$date2 >= minDate, ]
   dC <- dC[dC$jour >= minDate, ]
   
-  par(mar = c(3, 3, 3, 3), xpd = TRUE, mgp = c(2.5, 0.5, 0))
+  par(mar = c(3, 3, 3, 3), xpd = TRUE, mgp = c(2.5, 0.5, 0), las = 1)
   lwdd <- 6
   plot(as.Date(dC$jour), dC$P, xlim = as.Date(c(minDate, max(dC$jour))), 
        ylim = c(0, 1.1*max(dC$P)), 
@@ -929,7 +929,7 @@ plotCribTest <- function(regname, minDate = "2021-11-15"){
 ```
 
 
-```{r}
+```{r NbTestsCribDeliss, fig.width=10, fig.height=13}
 layout(matrix(1:15, ncol = 3, byrow = TRUE))
 
 # 1 Plot legend
@@ -937,8 +937,8 @@ par(mar = c(0, 0, 0, 0))
 plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.2, 1), ylim = c(-1, 0.5))
 legend(x = -0.15, y = 0, legend = c("Nb de tests positifs du jour", "Nb de tests criblés et interprétables"), 
           col = c(colTest, colCrib), 
-          pch = 16, 
-          box.col = gray(0, 0), bty = "n", cex = 1)
+          pch = 15, 
+          box.col = gray(0, 0), bty = "n", cex = 1.2)
 
 # 2 HDF
 #layout(1)
