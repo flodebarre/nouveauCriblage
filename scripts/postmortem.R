@@ -17,14 +17,14 @@ plotPNG <- TRUE
 # Whether to download data
 # TRUE for a first evaluation
 # FALSE if you are evaluating the file multiple times, to avoid downloading each time
-dlData <- FALSE
+dlData <- TRUE
 
 # Threshold to consider criblage data reliable (as fraction of nb_pos)
 thrp <- 0.05 
 
 # Date range in the figure
 minDate <- "2021-11-01"
-maxDate <- "2021-12-21" 
+maxDate <- "2021-12-29" 
 
 # Colors
 colOmicron <- "#FF4E2D"
@@ -57,7 +57,7 @@ sliding.window <- function(v, winwdt = 7, pos = 4, na.rm = TRUE){
 
 # Open figure file
 if(plotPNG){
-  png(fname, width = 1000, height = 900, pointsize = 25)
+  png(fname, width = 1000, height = 1500, pointsize = 25)
 }
 
 
@@ -123,7 +123,7 @@ colsD <- rep(colDelta, nrow(tmp))
 colsD[tmp$propCrib <= thrp] <- colIndet # Different color if not enough criblage
 
 # Start plot
-par(las = 1, xpd = TRUE, mgp = c(2, 0, 0))
+par(las = 1, xpd = TRUE, mgp = c(2, 0, 0), mar = c(5, 3, 28, 3))
 plot(as.Date(tmp$date), tmp$P7j, 
      type = "h", lwd = lwdd, col = colsO, lend = 1, 
      ylim = c(0, 25000), xlim = c(as.Date(minDate), as.Date(maxDate)),
@@ -139,18 +139,17 @@ points(as.Date(tmp$date), (1 - tmp$p) * tmp$P7j,
 
 # Add cas bruts
 # (uncomment to add)
-# points(as.Date(datCases$jour), datCases$P, col = colTot, pch = 20)
+points(as.Date(datCases$jour), datCases$P, col = colTot, pch = 20)
 
 # Legend
 # Uncomment to add legend cas bruts
 legend("topleft", 
        col = c(colDelta, colOmicron, colIndet, colTot), 
-       pch = c(15, 15, 15#, 20
+       pch = c(15, 15, 15, 20
                ), 
-       lwd = c(0, 0, 0#, 0
+       lwd = c(0, 0, 0, 0
                ), 
-       legend = c("Avec L452R (cas moyenne 7j)", "Sans L452R (cas moyenne 7j)", paste0("Plus assez de criblage (<", thrp * 100, "% des tests positifs)")#, "Cas totaux bruts"
-                  ), 
+       legend = c("Avec L452R (cas moyenne 7j)", "Sans L452R (cas moyenne 7j)", paste0("Plus assez de criblage (<", thrp * 100, "% des tests positifs)"), "Cas totaux bruts"), 
        bty = "n")
 
 par(xpd = FALSE)
