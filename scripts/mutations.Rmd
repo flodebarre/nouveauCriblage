@@ -11,6 +11,7 @@ editor_options:
   chunk_output_type: console
 ---
 
+Warning: The structure of the public datasets has changed, and I am updating this code. Currently, it does not compile if you try to knit it, you need to evaluate it bit by bit (I stopped after "Specific examples"). 
 
 ```{r, eval=FALSE}
 rm(list = ls()) # I don't care what you think
@@ -42,6 +43,9 @@ colMut <- brewer.pal(n = 8, name = "Dark2")
 col484K <- colMut[1]
 col484Q <- colMut[2]
 col452R <- colMut[3]
+colD <- colMut[4]
+colAC <- colMut[5]
+
 colTotCrib <- gray(0)#colMut[8]
 colTot <- colMut[7]
 
@@ -60,11 +64,39 @@ unique.noNA <- function(x){
 ## Test data
 
 ```{r}
-URL_Deps <- "https://www.data.gouv.fr/fr/datasets/r/4d3e5a8b-9649-4c41-86ec-5420eb6b530c"
-URL_Regions <- "https://www.data.gouv.fr/fr/datasets/r/5ff0cad6-f150-47ea-a4e0-57e354c1b2a4"
-URL_France <- "https://www.data.gouv.fr/fr/datasets/r/848debc4-0e42-4e3b-a176-afc285ed5401"
+# OLD URLS
+URL_Deps_old <- "https://www.data.gouv.fr/fr/datasets/r/4d3e5a8b-9649-4c41-86ec-5420eb6b530c"
+URL_Regions_old <- "https://www.data.gouv.fr/fr/datasets/r/5ff0cad6-f150-47ea-a4e0-57e354c1b2a4"
+URL_France_old <- "https://www.data.gouv.fr/fr/datasets/r/848debc4-0e42-4e3b-a176-afc285ed5401"
+
+# NEW URLS
+URL_Regions <- "https://www.data.gouv.fr/fr/datasets/r/9ed7f76c-09bc-43fb-997a-a1733faa6e8b"
+URL_France <- "https://www.data.gouv.fr/fr/datasets/r/7eade8d7-f79a-4c7f-8579-51f3f7104cfb"
+URL_Deps <- NA
 ```
 
+```{r}
+# Needed to be done only once
+
+# download.file(URL_France_old, 
+#                 destfile="../data/muts_France_old.csv",
+#                 method="curl",
+#                 extra='-L')
+# download.file(URL_Regions_old, 
+#                 destfile="../data/muts_Regions_old.csv",
+#                 method="curl",
+#                 extra='-L')
+# 
+# download.file(URL_Deps_old, 
+#                 destfile="../data/muts_Deps_old.csv",
+#                 method="curl",
+#                 extra='-L')
+
+dat.France.old <- read.csv("../data/muts_France_old.csv", sep = ";", stringsAsFactors = FALSE)
+dat.Regions.old <- read.csv("../data/muts_Regions_old.csv", sep = ";", stringsAsFactors = FALSE)
+dat.Deps.old <- read.csv("../data/muts_Deps_old.csv", sep = ";", stringsAsFactors = FALSE)
+
+```
 
 ```{r}
 # Download files from repo
@@ -79,16 +111,26 @@ if(dlData){
                 destfile="../data/muts_Regions.csv",
                 method="curl",
                 extra='-L')
-  download.file(URL_Deps, 
+  if(!is.na(URL_Deps)){
+    download.file(URL_Deps, 
                 destfile="../data/muts_Deps.csv",
                 method="curl",
                 extra='-L')
+  }
 }
 
 
-dat.France <- read.csv("../data/muts_France.csv", sep = ";", stringsAsFactors = FALSE)
-dat.Regions <- read.csv("../data/muts_Regions.csv", sep = ";", stringsAsFactors = FALSE)
-dat.Deps <- read.csv("../data/muts_Deps.csv", sep = ";", stringsAsFactors = FALSE)
+system("git add ../data/muts_*.csv")
+system("git commit -m 'update data'")
+
+
+dat.France.new <- read.csv("../data/muts_France.csv", sep = ";", stringsAsFactors = FALSE)
+dat.Regions.new <- read.csv("../data/muts_Regions.csv", sep = ";", stringsAsFactors = FALSE)
+
+if(!is.na(URL_Deps)){
+  dat.Deps.new <- read.csv("../data/muts_Deps.csv", sep = ";", stringsAsFactors = FALSE)
+}
+
 
 ```
 
@@ -101,7 +143,11 @@ dat.Deps <- read.csv("../data/muts_Deps.csv", sep = ";", stringsAsFactors = FALS
 # Codes regions
 URL <- "https://www.data.gouv.fr/en/datasets/r/34fc7b52-ef11-4ab0-bc16-e1aae5c942e7"
 dataFile <- "../data/coderegions.csv"
-download.file(URL, dataFile)
+
+if(!file.exists(dataFile)){
+  download.file(URL, dataFile)
+}
+
 codesRegions <- read.csv(dataFile, sep = ",", stringsAsFactors = FALSE)
 
 # Turn into dictionary
@@ -109,11 +155,10 @@ regs <- codesRegions$nom_region
 names(regs) <- as.character(codesRegions$code_region)
 
 # Add region name
-dat.Regions$reg_name <- regs[as.character(dat.Regions$reg)]
+dat.Regions.new$reg_name <- regs[as.character(dat.Regions.new$reg)]
 
-unique(dat.Regions$reg_name)
-unique(dat.Regions[which(is.na(dat.Regions$reg_name)), "reg"])
-
+unique(dat.Regions.new$reg_name)
+unique(dat.Regions.new[which(is.na(dat.Regions.new$reg_name)), "reg"])
 
 ```
 
@@ -127,14 +172,176 @@ deps <- read.csv("../data/departement2020.csv", stringsAsFactors = FALSE)
 dps <- deps$libelle
 names(dps) <- as.character(deps$dep)
 
+if(!is.na(URL_Deps)){
+  dat.Deps$departement <- dps[as.character(dat.Deps$dep)]
 
-dat.Deps$departement <- dps[as.character(dat.Deps$dep)]
+  unique(dat.Deps$departement)
+  
+  unique(dat.Deps[which(is.na(dat.Deps$departement)), "dep"])
+  
+  # 977 Saint-Barthélemy, 978 Saint-Martin
+}
 
-unique(dat.Deps$departement)
+```
 
-unique(dat.Deps[which(is.na(dat.Deps$departement)), "dep"])
+## Combine the old and new datasets
 
-# 977 Saint-Barthélemy, 978 Saint-Martin
+Useful functions
+
+```{r}
+# Plot colums to check that things are done alright
+compare.xy <- function(dat, col, addCombined = TRUE){
+   # dat: dataset
+   # col: column
+  par(las = 1, xpd = TRUE)
+  plot(dat[, paste0(col, ".x")], xlab = "jours", ylab = "", main = col)
+  points(dat[, paste0(col, ".y")], col = 2, pch = 0, cex = 0.7)
+  
+  if(addCombined){
+    points(dat[, col], pch = 2, col = 3)
+    legend("topleft", col = c(1, 2, 3), pch = c(1, 0, 2), legend = c("new", "old", "combined"), bty = "n")
+  }else{
+    legend("topleft", col = c(1, 2), pch = c(1, 0), legend = c("new", "old"), bty = "n")
+  }
+  par(xpd = FALSE)
+}
+
+# Sum columns, in spite of NAs
+computeSum <- function(dat, col){
+  tmpx <- dat[, paste0(col, ".x")]
+  tmpy <- dat[, paste0(col, ".y")]
+  
+  # Set NAs to 0
+  tmpx[is.na(tmpx)] <- 0
+  tmpy[is.na(tmpy)] <- 0
+  
+  # Return sum
+  tmpx + tmpy
+}
+```
+
+France
+
+```{r mergeFrance}
+tmp.France <- merge(dat.France.new, dat.France.old, all = TRUE, by = c("fra", "semaine"))
+dim(dat.France.new)
+dim(dat.France.old)
+dim(tmp.France)
+head(tmp.France)
+
+# nb_crib
+tmp.France$nb_crib <- computeSum(tmp.France, "nb_crib")
+compare.xy(tmp.France, "nb_crib")
+
+# nb_pos
+tmp.France$nb_pos <- tmp.France$nb_pos.x # New ones for times >= 2021-01-06
+tmp.France[is.na(tmp.France$nb_pos), "nb_pos"] <- tmp.France[is.na(tmp.France$nb_pos), "nb_pos.y"] # Old ones
+compare.xy(tmp.France, "nb_pos")
+
+# A0
+tmp.France$nb_A0 <- computeSum(tmp.France, "nb_A0")
+compare.xy(tmp.France, "nb_A0")
+
+# A1
+tmp.France$nb_A1 <- computeSum(tmp.France, "nb_A1")
+compare.xy(tmp.France, "nb_A1")
+
+# C0
+tmp.France$nb_C0 <- computeSum(tmp.France, "nb_C0")
+compare.xy(tmp.France, "nb_C0")
+
+# C1
+tmp.France$nb_C1 <- computeSum(tmp.France, "nb_C1")
+compare.xy(tmp.France, "nb_C1")
+```
+
+Regions
+
+```{r mergeRegions}
+tmp.Regions <- merge(dat.Regions.new, dat.Regions.old, all = TRUE, by = c("reg", "semaine"))
+dim(dat.Regions.new)
+dim(dat.Regions.old)
+dim(tmp.Regions)
+head(tmp.Regions)
+head(dat.Regions.new)
+
+
+# nb_crib
+tmp.Regions$nb_crib <- computeSum(tmp.Regions, "nb_crib")
+compare.xy(tmp.Regions, "nb_crib")
+
+# nb_pos
+tmp.Regions$nb_pos <- tmp.Regions$nb_pos.x # New ones for times >= 2021-01-06
+tmp.Regions[is.na(tmp.Regions$nb_pos), "nb_pos"] <- tmp.Regions[is.na(tmp.Regions$nb_pos), "nb_pos.y"] # Old ones
+compare.xy(tmp.Regions, "nb_pos")
+
+# A0
+tmp.Regions$nb_A0 <- computeSum(tmp.Regions, "nb_A0")
+compare.xy(tmp.Regions, "nb_A0")
+
+# A1
+tmp.Regions$nb_A1 <- computeSum(tmp.Regions, "nb_A1")
+compare.xy(tmp.Regions, "nb_A1")
+
+# C0
+tmp.Regions$nb_C0 <- computeSum(tmp.Regions, "nb_C0")
+compare.xy(tmp.Regions, "nb_C0")
+
+# C1
+tmp.Regions$nb_C1 <- computeSum(tmp.Regions, "nb_C1")
+compare.xy(tmp.Regions, "nb_C1")
+```
+
+Departements
+
+```{r mergeDeps}
+if(!is.na(URL_Deps)){
+  tmp.Deps <- merge(dat.Deps.new, dat.Deps.old, all = TRUE, by = c("dep", "semaine"))
+  dim(dat.Deps.new)
+  dim(dat.Deps.old)
+  dim(tmp.Deps)
+  head(tmp.Deps)
+  head(dat.Regions.new)
+  
+  
+  # nb_crib
+  tmp.Deps$nb_crib <- computeSum(tmp.Deps, "nb_crib")
+  compare.xy(tmp.Deps, "nb_crib")
+  
+  # nb_pos
+  tmp.Deps$nb_pos <- tmp.Deps$nb_pos.x # New ones for times >= 2021-01-06
+  tmp.Deps[is.na(tmp.Deps$nb_pos), "nb_pos"] <- tmp.Deps[is.na(tmp.Deps$nb_pos), "nb_pos.y"] # Old ones
+  compare.xy(tmp.Deps, "nb_pos")
+  
+  # A0
+  tmp.Deps$nb_A0 <- computeSum(tmp.Deps, "nb_A0")
+  compare.xy(tmp.Deps, "nb_A0")
+  
+  # A1
+  tmp.Deps$nb_A1 <- computeSum(tmp.Deps, "nb_A1")
+  compare.xy(tmp.Deps, "nb_A1")
+  
+  # C0
+  tmp.Deps$nb_C0 <- computeSum(tmp.Deps, "nb_C0")
+  compare.xy(tmp.Deps, "nb_C0")
+  
+  # C1
+  tmp.Deps$nb_C1 <- computeSum(tmp.Deps, "nb_C1")
+  compare.xy(tmp.Deps, "nb_C1")
+
+}else{
+  tmp.Deps <- dat.Deps.old
+}
+
+```
+
+
+Rename data
+
+```{r}
+dat.France <- tmp.France
+dat.Regions <- tmp.Regions
+dat.Deps <- tmp.Deps
 ```
 
 ## Clean data
@@ -149,6 +356,15 @@ dat.France$dateMid <- dat.France$date2 - 3
 
 # Rewrite time as days since beginning of the data
 dat.France$time <- dat.France$dateMid - min(dat.France$date2)
+
+
+# Format date
+dat.France.old$date1 <- as.Date(substring(dat.France.old$semaine, 1, 10))
+dat.France.old$date2 <- as.Date(substring(dat.France.old$semaine, 12, 21))
+
+# Mid-interval date
+dat.France.old$dateMid <- dat.France.old$date2 - 3
+
 ```
 
 
@@ -161,24 +377,44 @@ dat.Regions$time <- dat.Regions$date2 - min(dat.Regions$date2)
 
 # Mid-interval date
 dat.Regions$dateMid <- dat.Regions$date2 - 3
+
+
+# Format date
+dat.Regions.old$date1 <- as.Date(substring(dat.Regions.old$semaine, 1, 10))
+dat.Regions.old$date2 <- as.Date(substring(dat.Regions.old$semaine, 12, 21))
+# Mid-interval date
+dat.Regions.old$dateMid <- dat.Regions.old$date2 - 3
+
 ```
 
 
 ```{r}
-# Format date
-dat.Deps$date1 <- as.Date(substring(dat.Deps$semaine, 1, 10))
-dat.Deps$date2 <- as.Date(substring(dat.Deps$semaine, 12, 21))
-# Rewrite time as days since beginning of the data
-dat.Deps$time <- dat.Deps$date2 - min(dat.Deps$date2)
+if(!is.na(URL_Deps)){
+  # Format date
+  dat.Deps$date1 <- as.Date(substring(dat.Deps$semaine, 1, 10))
+  dat.Deps$date2 <- as.Date(substring(dat.Deps$semaine, 12, 21))
+  # Rewrite time as days since beginning of the data
+  dat.Deps$time <- dat.Deps$date2 - min(dat.Deps$date2)
+  
+  # Mid-interval date
+  dat.Deps$dateMid <- dat.Deps$date2 - 3 
+}
 
+
+# Format date
+dat.Deps.old$date1 <- as.Date(substring(dat.Deps.old$semaine, 1, 10))
+dat.Deps.old$date2 <- as.Date(substring(dat.Deps.old$semaine, 12, 21))
 # Mid-interval date
-dat.Deps$dateMid <- dat.Deps$date2 - 3
+dat.Deps.old$dateMid <- dat.Deps.old$date2 - 3 
+
 ```
+
+
 
 
 ## Consistency checks 
 
-```{r}
+```{r, eval = FALSE}
 
 testDat <- function(dat){
   # Check number of genotypied tests
@@ -201,12 +437,15 @@ testDat <- function(dat){
 
 testDat(dat.France)
 testDat(dat.Regions)
-testDat(dat.Deps)
+if(!is.na(URL_Deps)){
+  testDat(dat.Deps)
+}
+
 ```
 
 # (tmp Extractions)
 
-```{r}
+```{r, eval = FALSE}
 tmp <- dat.Regions[which(dat.Regions$reg_name == "Île-de-France"), ]
 
 # dim(tmp)
@@ -226,57 +465,49 @@ plotNbCrib <- function(dat, quot = TRUE, addLegend = TRUE, tp = "l", lwd = 1.5){
   if(quot){denom <- 7}else{denom <- 1}
   par(las = 1)
   par(mar = c(2, 4, 3, 4))
-  plot(as.Date(dat$date2), dat$nb_pos / denom, ylim = c(0, 1.05*max(dat$nb_pos / denom, na.rm = TRUE)), yaxs = "i", 
+  plot(as.Date(dat$dateMid), dat$nb_pos / denom, ylim = c(0, 1.05*max(dat$nb_pos / denom, na.rm = TRUE)), yaxs = "i", 
        type = tp, pch = 16, col = colTot, 
        lwd = lwd, 
        frame.plot = FALSE, 
        xlab = "", ylab = "")
   
-  lines(as.Date(dat$date2), dat$nb_crib / denom, type = tp, pch = 16, col = colTotCrib)
+  lines(as.Date(dat$dateMid), dat$nb_crib / denom, type = tp, pch = 16, col = colTotCrib)
   
   if(addLegend){
-    legend(x = "topright", legend = c("Nb tests positifs", "Nb tests criblés", "Nb tests interprétables E484K", "Nb tests interprétables E484Q", "Nb tests interprétables L452R"), 
-         col = c(colTot, colTotCrib, col484K, col484Q, col452R), 
+    legend(x = "topright", legend = c("Nb tests positifs", "Nb tests criblés", "Nb tests interprétables E484K", "Nb tests interprétables E484Q", "Nb tests interprétables L452R", "Nb tests interprétables colonne D", "Nb tests interprétables AC"), 
+         col = c(colTot, colTotCrib, col484K, col484Q, col452R, colD, colAC), 
          #pch = 16, 
          lty = 1, box.col = gray(0, 0), bty = "n", 
          lwd = lwd)
   }
   
-  lines(as.Date(dat$date2), (dat$nb_A0 + dat$nb_A1) / denom, type = tp, pch = 16, col = col484K, lwd = lwd)
-  lines(as.Date(dat$date2), (dat$nb_B0 + dat$nb_B1) / denom, type = tp, pch = 16, col = col484Q, lwd = lwd)
-  lines(as.Date(dat$date2), (dat$nb_C0 + dat$nb_C1) / denom, type = tp, pch = 16, col = col452R, lwd = lwd)
+  lines(as.Date(dat$dateMid), (dat$nb_A0 + dat$nb_A1) / denom, type = tp, pch = 16, col = col484K, lwd = lwd)
+  lines(as.Date(dat$dateMid), (dat$nb_B0 + dat$nb_B1) / denom, type = tp, pch = 16, col = col484Q, lwd = lwd)
+  lines(as.Date(dat$dateMid), (dat$nb_C0 + dat$nb_C1) / denom, type = tp, pch = 16, col = col452R, lwd = lwd)
+  lines(as.Date(dat$dateMid), (dat$nb_D0 + dat$nb_D1) / denom, type = tp, pch = 16, col = colD, lwd = lwd)
+  lines(as.Date(dat$dateMid), (dat$nb_A01C01) / denom, type = tp, pch = 16, col = colAC, lwd = lwd)
   
   axis(4)
 }
 ```
 
 ```{r}
-#
 plotTauxCrib <- function(dat){
   par(las = 1)
   par(mar = c(2, 4, 3, 4))
-
-  plot(dat$dateMid, dat$tx_crib, ylim = c(0, 100), lwd = 3, col = gray(0.3), frame.plot = FALSE, 
+  plot(dat$dateMid, 100*dat$nb_crib / dat$nb_pos, ylim = c(0, 100), lwd = 3, col = gray(0.3), frame.plot = FALSE, 
        xlab = "", ylab = "", yaxs = "i", type = "p", pch = 16)
   # Show final point
   i <- which(dat$dateMid == max(dat$dateMid, na.rm = TRUE))
-  points(dat$dateMid[i], dat$tx_crib[i], col = "red", pch = 16)
+  points(dat$dateMid[i], 100*(dat$nb_crib / dat$nb_pos)[i], col = "red", pch = 16)
   axis(4)
 }
-
 ```
-
 
 
 ```{r NbCribFrance}
 plotNbCrib(dat.France)
 title(main = "France")
-```
-
-```{r TxCribFrance}
-plotTauxCrib(dat.France[dat.France$dateMid >= "2021-11-15", ])
-title(main = "France")
-
 ```
 
 
@@ -318,9 +549,11 @@ layout(matrix(1:15, ncol = 3, byrow = TRUE))
 
 # 1 Plot legend
 par(mar = c(0, 0, 0, 0))
+
+    
 plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.2, 1), ylim = c(-1, 0.5))
-legend(x = 0, y = 0, legend = c("Nb tests positifs", "Nb tests criblés", "Nb tests interprétables E484K", "Nb tests interprétables E484Q", "Nb tests interprétables L452R"), 
-         col = c(colTot, colTotCrib, col484K, col484Q, col452R), 
+legend(x = 0, y = 0, legend = c("Nb tests positifs", "Nb tests criblés", "Nb tests interprétables E484K", "Nb tests interprétables E484Q", "Nb tests interprétables L452R", "Nb tests interprétables colonne D", "Nb tests interprétables AC"), 
+         col = c(colTot, colTotCrib, col484K, col484Q, col452R, colD, colAC), 
          #pch = 16, 
          lty = 1, box.col = gray(0, 0), bty = "n", cex = 1)
 
@@ -451,12 +684,10 @@ plotRegTx("Corse")
 ```
 
 
-
 ## Proportions / Nb tests
 
 ```{r}
-plotMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE){
-  # dat: dataset to be plotted
+plotMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE, add = FALSE){
   # quot: boolean to decide whether to plot the daily values (averaged over 7 days) [TRUE], or the sum over the last 7 days [FALSE]
   
   if(quot){denom <- 7}else{denom <- 1}
@@ -469,17 +700,20 @@ plotMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE){
   # Remove points for which the itv cannot be computed
   deltaItv <- deltaItv[keepPts]
   pp <- p[keepPts]
+  xx <- base::as.Date(time)[keepPts]
 
   par(mar = c(5, 4, 4, 4))
   par(las = 1)
-  plot(as.Date(time), p, ylim = c(0, ymax), frame.plot = FALSE, 
+  par(xpd = TRUE)
+  if(!add){
+    plot(as.Date(time), p, ylim = c(0, ymax), frame.plot = FALSE, 
      xlab = "", ylab = "p", yaxs = "i", xaxs = "i", 
-     type = "l", col = col, pch = 16)
-mtext("  Parmi les n(t) tests interprétables recherchant la mutation
+     type = "p", col = col, pch = 16)
+    par(xpd = FALSE)
+  mtext("  Parmi les n(t) tests interprétables recherchant la mutation
   Intervalle de confiance binomial sur ce nombre de tests n(t)", side = 3, cex = 0.6, adj = 0, line = -1)
-mtext("date", line = 2, side = 1)  
+  mtext("date", line = 2, side = 1)  
   axis(4)
-  xx <- base::as.Date(time)[keepPts]
   # Add graduation
   for(i in seq(0, 1, by = 0.1)){
     abline(h = i, col = gray(0.9), lwd = 1.1)
@@ -488,12 +722,21 @@ mtext("date", line = 2, side = 1)
     abline(h = i, col = gray(0.9), lwd = 0.8)
   }
   
-  polygon(x = c(xx, rev(xx), xx[1]), y = c(pp + deltaItv, rev(pp - deltaItv), (pp + deltaItv)[1]), border = NA, col = adjustcolor(col, alpha.f = 0.3))
-  
   mtext("Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
-Code : https://github.com/flodebarre/nouveauCriblage", side = 1, line = 3.5, cex = 0.7, col = gray(0.5), adj = 0)
+Code : https://github.com/flodebarre/nouveauCriblage", side = 1, line = 3.5, cex = 0.6, col = gray(0.5), adj = 0, family = "mono")
 
   title(main = thetit)
+
+  }else{ # Else of add
+    par(xpd = TRUE)
+    points(as.Date(time), p,  
+     type = "p", col = col, pch = 16)
+  }
+  arrows(x0 = xx, x1 = xx, 
+         y0 = pp - deltaItv, y1 = pp + deltaItv, 
+         col = col, lwd = 1, code = 0)
+#  polygon(x = c(xx, rev(xx), xx[1]), y = c(pp + deltaItv, rev(pp - deltaItv), (pp + deltaItv)[1]), border = NA, col = adjustcolor(col, alpha.f = 0.3))
+  par(xpd = FALSE)
   print(p[length(p)])
 }
 ```
@@ -704,60 +947,14 @@ layout(1)
 
 ```
 
-```{r funcplotCaseMut}
-plotCaseMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE){
-  # dat: dataset to be plotted
-  # quot: boolean to decide whether to plot the daily values (averaged over 7 days) [TRUE], or the sum over the last 7 days [FALSE]
-  
-  if(quot){denom <- 7}else{denom <- 1}
-  n <- (test1 + test0) / denom
-  p <- test1 / (test1 + test0)
-  
-  # Computation of the confidence interval
-  deltaItv <- 1.96 * sqrt(p * (1-p) / n)
-  keepPts <- !is.na(deltaItv) 
-  # Remove points for which the itv cannot be computed
-  deltaItv <- deltaItv[keepPts]
-  pp <- p[keepPts]
-  nn <- n[keepPts]
-
-  par(mar = c(5, 4, 4, 4))
-  par(las = 1)
-  ymax <- 1.05 * max(pp*nn + nn*deltaItv, na.rm = TRUE)
-  plot(as.Date(time), p * n, ylim = c(0, ymax), frame.plot = FALSE, 
-     xlab = "", ylab = "n", yaxs = "i", xaxs = "i", 
-     type = "o", col = col, pch = 16)
-mtext("  Parmi les n(t) = C0(t) + C1(t) tests interprétables recherchant la mutation
-  Intervalle de confiance binomial sur ce nombre de tests n(t)
-  
-  Attention : les données publiques sont données partagées déjà lissées sur 7j", side = 3, cex = 0.7, adj = 0, line = -1)
-mtext("date", line = 2, side = 1) 
-  axis(2, at = seq(0, 1, by = 0.1))
-  axis(4, at = seq(0, 1, by = 0.1))
-  xx <- base::as.Date(time)[keepPts]
-  polygon(x = c(xx, rev(xx), xx[1]), y = c(nn*pp + nn*deltaItv, rev(nn*pp - nn*deltaItv), (nn*pp + nn*deltaItv)[1]), border = NA, col = adjustcolor(col, alpha.f = 0.3))
-  
-  mtext("Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
-Code : https://github.com/flodebarre/nouveauCriblage", side = 1, line = 3.5, cex = 0.7, col = gray(0.5), adj = 0)
-
-  title(main = thetit)
-}
-```
-
-
 ### France 
 
 ```{r}
-plotMut(dat.France$date2, dat.France$nb_A0, dat.France$nb_A1, col = col484K, thetit = "Proportion of cases with \nE484K, France", ymax = 0.3)
-plotMut(dat.France$date2, dat.France$nb_B0, dat.France$nb_B1, col = col484Q, thetit = "Proportion of cases with \nE484Q, France", ymax = 0.3)
-plotMut(dat.France$date2, dat.France$nb_C0, dat.France$nb_C1, col = col452R, thetit = "L452R, France")
+plotMut(dat.France$dateMid, dat.France$nb_A0, dat.France$nb_A1, col = col484K, thetit = "Proportion of cases with \nE484K, France", ymax = 0.3)
+plotMut(dat.France$dateMid, dat.France$nb_B0, dat.France$nb_B1, col = col484Q, thetit = "Proportion of cases with \nE484Q, France", ymax = 0.3)
+plotMut(dat.France$dateMid, dat.France$nb_C0, dat.France$nb_C1, col = col452R, thetit = "L452R, France")
 ```
 
-```{r}
-plotCaseMut(dat.France$date2, dat.France$nb_A0, dat.France$nb_A1, col = col484K, thetit = "E484K, France")
-plotCaseMut(dat.France$date2, dat.France$nb_B0, dat.France$nb_B1, col = col484Q, thetit = "E484Q, France")
-plotCaseMut(dat.France$date2, dat.France$nb_C0, dat.France$nb_C1, col = col452R, thetit = "L452R, France")
-```
 
 
 ### Regions 
@@ -765,19 +962,48 @@ plotCaseMut(dat.France$date2, dat.France$nb_C0, dat.France$nb_C1, col = col452R,
 ```{r regionsPlot, eval = FALSE}
 for(reg in unique.noNA(dat.Regions$reg_name)){
   dat <- dat.Regions[dat.Regions$reg_name == reg, ]
-  plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", reg), ymax = 1)
+  plotMut(time = dat$dateMid, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", reg), ymax = 1)
+}
+
+
+
+for(reg in unique.noNA(dat.Regions$reg_name)){
+  dat <- dat.Regions[which(dat.Regions$reg_name == reg & dat.Regions$date2 >= "2021-11-01"), ]
+  plotMut(time = dat$date2, test0 = dat$nb_A0, test1 = dat$nb_A1, col = col484K, thetit = paste0("E484K, ", reg), ymax = 0.2)
 }
 
 ```
 
+### Specific examples
+
 ```{r}
+unique(dat.Regions$nom_reg)
+tmp <- dat.Regions[which(dat.Regions$nom_reg == "Provence-Alpes-Côte d'Azur" & dat.Regions$dateMid >= "2021-11-15"), ]
+
+plotMut(time = tmp$dateMid, test0 = tmp$nb_A0, test1 = tmp$nb_A1, col = col484K, thetit = "Provence-Alpes-Côte d'Azur")
+
+plotMut(time = tmp$dateMid, test1 = tmp$nb_C0, test0 = tmp$nb_C1, col = col452R, thetit = "Provence-Alpes-Côte d'Azur", add = TRUE)
+
+plotMut(time = tmp$dateMid, test1 = tmp$nb_A0C0, test0 = tmp$nb_A01C01 - tmp$nb_A0C0, col = colAC, thetit = "Provence-Alpes-Côte d'Azur", add = TRUE)
+
+legend(x = as.Date("2021-11-16"), y = 0.8, 
+       col = c(col452R, colAC, col484K), 
+       legend = c("Proportion non-L452R", 
+                  "Proportion non-L452R and non-E484K", 
+                  "Proportion E484K"), 
+       pch = 16, box.lwd = 0)
+
+```
+
+We cannot do this anymore with the new data...
+
+```{r, eval = FALSE}
 # Source function to turn back into raw data 
 source("delissage.R")
 ```
 
 
-
-```{r figRegionsMapPropC0, fig.width=10, fig.height=15}
+```{r figRegionsMapPropC0, fig.width=10, fig.height=15, eval = FALSE}
 
 # Function to plot one region
 # We set et all parameters here
