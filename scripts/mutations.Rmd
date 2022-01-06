@@ -732,11 +732,11 @@ Code : https://github.com/flodebarre/nouveauCriblage", side = 1, line = 3.5, cex
     points(as.Date(time), p,  
      type = "p", col = col, pch = 16)
   }
+  par(xpd = FALSE)
   arrows(x0 = xx, x1 = xx, 
          y0 = pp - deltaItv, y1 = pp + deltaItv, 
          col = col, lwd = 1, code = 0)
 #  polygon(x = c(xx, rev(xx), xx[1]), y = c(pp + deltaItv, rev(pp - deltaItv), (pp + deltaItv)[1]), border = NA, col = adjustcolor(col, alpha.f = 0.3))
-  par(xpd = FALSE)
   print(p[length(p)])
 }
 ```
