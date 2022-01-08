@@ -31,7 +31,7 @@ Source of the data:
 
 ```{r}
 # Whether to download the data
-dlData <- TRUE
+dlData <- FALSE
 ```
 
 
@@ -39,6 +39,18 @@ dlData <- TRUE
 # Set colors
 library(RColorBrewer)
 colMut <- brewer.pal(n = 8, name = "Dark2")
+
+# Met palettes
+# install.packages("MetBrewer")
+library("MetBrewer")
+
+colMut <- met.brewer("Redon", n = 7, type = "discrete")
+colMut
+colMut[1:7]
+# Colorblind Choices are: Austria, Cassatt1, Cassatt2, Cross, Degas, Derain, Egypt, Gauguin, Greek, Hiroshige, Hokusai1, Hokusai2, Hokusai3, Homer1, Homer2, Ingres, Isfahan1, Isfahan2, Juarez, Klimt, Lakota, Manet, Monet, Moreau, Morgenstern, Nattier, Navajo, NewKingdom, Nizami, OKeeffe1, OKeeffe2, Peru1, Peru2, Pillement, Pissaro, Redon, Renoir, Robert, Signac, Stevens, Tara, Thomas, Tiepolo, Troy, Tsimshian, VanGogh1, VanGogh2, VanGogh3, Veronese, and Wissing
+
+colGrad <- met.brewer("Hiroshige", n = 7, type = "continuous")
+# Note: 7 is hard-coded, this is the number of different intervals for variant assignation
 
 col484K <- colMut[1]
 col484Q <- colMut[2]
@@ -51,6 +63,13 @@ colTot <- colMut[7]
 
 col452R.complement <- "#b37570"
 colDL <- "#FFD390" # Données délissées
+
+
+colON <- met.brewer("Tiepolo", n = 5, type = "discrete")
+colOld <- colON[2]
+colNew <- colON[3]
+colCombined <- colON[5]
+
 ```
 
 ```{r}
@@ -59,9 +78,14 @@ unique.noNA <- function(x){
 }
 ```
 
+```{r results='hide'}
+# Sliding window functio
+source("usefulFunctions.R")
+```
+
 # Load data 
 
-## Test data
+## Criblage data
 
 ```{r}
 # OLD URLS
@@ -135,73 +159,68 @@ if(!is.na(URL_Deps)){
 ```
 
 
-## Geographic data
+## Test data
 
-### Regions 
+Source: <https://www.data.gouv.fr/fr/datasets/donnees-relatives-aux-resultats-des-tests-virologiques-covid-19/#>
 
 ```{r}
-# Codes regions
-URL <- "https://www.data.gouv.fr/en/datasets/r/34fc7b52-ef11-4ab0-bc16-e1aae5c942e7"
-dataFile <- "../data/coderegions.csv"
+URLtest_France <- "https://www.data.gouv.fr/fr/datasets/r/dd0de5d9-b5a5-4503-930a-7b08dc0adc7c"
+URLtest_Reg <- "https://www.data.gouv.fr/fr/datasets/r/001aca18-df6a-45c8-89e6-f82d689e6c01"
+URLtest_Dep <- "https://www.data.gouv.fr/fr/datasets/r/406c6a23-e283-4300-9484-54e78c8ae675"
 
-if(!file.exists(dataFile)){
-  download.file(URL, dataFile)
+if(dlData){
+  download.file(URLtest_France, "../data/tests_France.csv")
+  download.file(URLtest_Reg, "../data/tests_Reg.csv")
+  download.file(URLtest_Dep, "../data/tests_Deps.csv")
+  
+  system("git add ../data/tests*csv")
+  system("git commit -m 'update test data'")
 }
 
-codesRegions <- read.csv(dataFile, sep = ",", stringsAsFactors = FALSE)
-
-# Turn into dictionary
-regs <- codesRegions$nom_region
-names(regs) <- as.character(codesRegions$code_region)
-
-# Add region name
-dat.Regions.new$reg_name <- regs[as.character(dat.Regions.new$reg)]
-
-unique(dat.Regions.new$reg_name)
-unique(dat.Regions.new[which(is.na(dat.Regions.new$reg_name)), "reg"])
-
+tests.France <- read.csv("../data/tests_France.csv", sep = ";", stringsAsFactors = FALSE)
+tests.Reg <- read.csv("../data/tests_Reg.csv", sep = ";", stringsAsFactors = FALSE)
+tests.Deps <- read.csv("../data/tests_Deps.csv", sep = ";", stringsAsFactors = FALSE)
 ```
 
 
-### Departments
-
 ```{r}
-# Add name
-deps <- read.csv("../data/departement2020.csv", stringsAsFactors = FALSE)
-# Turn into dictionnary
-dps <- deps$libelle
-names(dps) <- as.character(deps$dep)
+# Criblage is without age classes: remove them now to avoid errors
+tests.France <- tests.France[which(tests.France$cl_age90 == 0), ]
+tests.Reg <- tests.Reg[which(tests.Reg$cl_age90 == 0), ]
+tests.Deps <- tests.Deps[which(tests.Deps$cl_age90 == 0), ]
 
-if(!is.na(URL_Deps)){
-  dat.Deps$departement <- dps[as.character(dat.Deps$dep)]
+# Compute sliding averages
+tests.France$P7j <- sliding.window(tests.France$P)
+tests.France$T7j <- sliding.window(tests.France$T)
 
-  unique(dat.Deps$departement)
-  
-  unique(dat.Deps[which(is.na(dat.Deps$departement)), "dep"])
-  
-  # 977 Saint-Barthélemy, 978 Saint-Martin
-}
-
+# Note: Sliding averages for Reg and Deps computed separately, because
+# need to do it for each location independently
 ```
+
 
 ## Combine the old and new datasets
 
 Useful functions
 
 ```{r}
+pchOld <- 16
+pchNew <- 15
+pchCombined <- 5
+lwdCombined <- 1.5
+
 # Plot colums to check that things are done alright
 compare.xy <- function(dat, col, addCombined = TRUE){
    # dat: dataset
    # col: column
   par(las = 1, xpd = TRUE)
-  plot(dat[, paste0(col, ".x")], xlab = "jours", ylab = "", main = col)
-  points(dat[, paste0(col, ".y")], col = 2, pch = 0, cex = 0.7)
+  plot(dat$dateMid, dat[, paste0(col, ".x")], xlab = "", ylab = "", main = col, col = colNew, pch = pchNew)
+  points(dat$dateMid, dat[, paste0(col, ".y")], col = colOld, pch = pchOld, cex = 1)
   
   if(addCombined){
-    points(dat[, col], pch = 2, col = 3)
-    legend("topleft", col = c(1, 2, 3), pch = c(1, 0, 2), legend = c("new", "old", "combined"), bty = "n")
+    points(dat$dateMid, dat[, col], pch = pchCombined, col = colCombined, lwd = lwdCombined)
+    legend("topleft", col = c(colNew, colOld, colCombined), pch = c(pchNew, pchOld, pchCombined), legend = c("new", "old", "combined"), bty = "n", lwd = c(1, 1, lwd = lwdCombined), lty = 0)
   }else{
-    legend("topleft", col = c(1, 2), pch = c(1, 0), legend = c("new", "old"), bty = "n")
+    legend("topleft", col = c(colNew, colOld), pch = c(pchNew, pchOld), legend = c("new", "old"), bty = "n")
   }
   par(xpd = FALSE)
 }
@@ -229,6 +248,16 @@ dim(dat.France.old)
 dim(tmp.France)
 head(tmp.France)
 
+# Format date
+tmp.France$date1 <- as.Date(substring(tmp.France$semaine, 1, 10))
+tmp.France$date2 <- as.Date(substring(tmp.France$semaine, 12, 21))
+
+# Mid-interval date
+tmp.France$dateMid <- tmp.France$date2 - 3
+
+  # Rewrite time as days since beginning of the data
+  tmp.France$time <- tmp.France$dateMid - min(tmp.France$dateMid)
+  
 # nb_crib
 tmp.France$nb_crib <- computeSum(tmp.France, "nb_crib")
 compare.xy(tmp.France, "nb_crib")
@@ -264,6 +293,16 @@ dim(dat.Regions.old)
 dim(tmp.Regions)
 head(tmp.Regions)
 head(dat.Regions.new)
+
+# Format date
+tmp.Regions$date1 <- as.Date(substring(tmp.Regions$semaine, 1, 10))
+tmp.Regions$date2 <- as.Date(substring(tmp.Regions$semaine, 12, 21))
+
+# Mid-interval date
+tmp.Regions$dateMid <- tmp.Regions$date2 - 3
+
+  # Rewrite time as days since beginning of the data
+  tmp.Regions$time <- tmp.Regions$dateMid - min(tmp.Regions$dateMid)
 
 
 # nb_crib
@@ -333,6 +372,17 @@ if(!is.na(URL_Deps)){
   tmp.Deps <- dat.Deps.old
 }
 
+  # Format date
+  tmp.Deps$date1 <- as.Date(substring(tmp.Deps$semaine, 1, 10))
+  tmp.Deps$date2 <- as.Date(substring(tmp.Deps$semaine, 12, 21))
+  
+  # Mid-interval date
+  tmp.Deps$dateMid <- tmp.Deps$date2 - 3
+  
+  # Rewrite time as days since beginning of the data
+  tmp.Deps$time <- tmp.Deps$dateMid - min(tmp.Deps$dateMid)
+
+
 ```
 
 
@@ -344,9 +394,14 @@ dat.Regions <- tmp.Regions
 dat.Deps <- tmp.Deps
 ```
 
-## Clean data
 
-```{r}
+
+## Add dates
+
+```{r, eval = FALSE}
+# Already done with the new format!
+
+
 # Format date
 dat.France$date1 <- as.Date(substring(dat.France$semaine, 1, 10))
 dat.France$date2 <- as.Date(substring(dat.France$semaine, 12, 21))
@@ -365,10 +420,7 @@ dat.France.old$date2 <- as.Date(substring(dat.France.old$semaine, 12, 21))
 # Mid-interval date
 dat.France.old$dateMid <- dat.France.old$date2 - 3
 
-```
 
-
-```{r}
 # Format date
 dat.Regions$date1 <- as.Date(substring(dat.Regions$semaine, 1, 10))
 dat.Regions$date2 <- as.Date(substring(dat.Regions$semaine, 12, 21))
@@ -385,20 +437,15 @@ dat.Regions.old$date2 <- as.Date(substring(dat.Regions.old$semaine, 12, 21))
 # Mid-interval date
 dat.Regions.old$dateMid <- dat.Regions.old$date2 - 3
 
-```
 
+# Format date
+dat.Deps$date1 <- as.Date(substring(dat.Deps$semaine, 1, 10))
+dat.Deps$date2 <- as.Date(substring(dat.Deps$semaine, 12, 21))
+# Rewrite time as days since beginning of the data
+dat.Deps$time <- dat.Deps$date2 - min(dat.Deps$date2)
 
-```{r}
-if(!is.na(URL_Deps)){
-  # Format date
-  dat.Deps$date1 <- as.Date(substring(dat.Deps$semaine, 1, 10))
-  dat.Deps$date2 <- as.Date(substring(dat.Deps$semaine, 12, 21))
-  # Rewrite time as days since beginning of the data
-  dat.Deps$time <- dat.Deps$date2 - min(dat.Deps$date2)
-  
-  # Mid-interval date
-  dat.Deps$dateMid <- dat.Deps$date2 - 3 
-}
+# Mid-interval date
+dat.Deps$dateMid <- dat.Deps$date2 - 3 
 
 
 # Format date
@@ -410,38 +457,80 @@ dat.Deps.old$dateMid <- dat.Deps.old$date2 - 3
 ```
 
 
+## Combine criblage and tests
 
+```{r}
+# Turn dates into dates for merging
+tests.France$dateMid <- as.Date(tests.France$jour)
+tests.Reg$dateMid <- as.Date(tests.Reg$jour)
+tests.Deps$dateMid <- as.Date(tests.Deps$jour)
 
-## Consistency checks 
+unique(tests.Reg$reg)
+unique(tests.Deps$dep)
+unique(dat.Deps$dep)
+head(tests.France)
+head(dat.France)
 
-```{r, eval = FALSE}
+dat.France <- merge(dat.France, tests.France, all = TRUE, by = "dateMid")
 
-testDat <- function(dat){
-  # Check number of genotypied tests
-  testTotA <- sum(dat$nb_crib != (dat$nb_A0+ dat$nb_A1))
-  testTotB <- sum(dat$nb_crib != (dat$nb_B0+ dat$nb_B1))
-  testTotC <- sum(dat$nb_crib != (dat$nb_C0+ dat$nb_C1))
-  
-  # Test proportions of positive genotyping tests
-  # nb of digits in the result varies across datasets
-  if(all(dat$tx_A1 == round(dat$tx_A1, 1))){nDigits <- 1}else{nDigits <- 2}
-  testA <- sum(dat$tx_A1 != round(dat$nb_A1 / (dat$nb_A0 + dat$nb_A1)*100, nDigits), na.rm = TRUE)
-  testB <- sum(dat$tx_B1 != round(dat$nb_B1 / (dat$nb_B0 + dat$nb_B1)*100, nDigits), na.rm = TRUE)
-  testC <- sum(dat$tx_C1 != round(dat$nb_C1 / (dat$nb_C0 + dat$nb_C1)*100, nDigits), na.rm = TRUE)
-  
-  testCrib <- sum(round(dat$tx_crib / 100 * dat$nb_pos) != round(dat$nb_crib))
-  
-  # Return outcome
-  c(nrow(dat), testCrib, testTotA, testTotB, testTotB, testA, testB, testC)
-}
+dat.Regions <- merge(dat.Regions, tests.Reg, all = TRUE, by = c("dateMid", "reg"))
 
-testDat(dat.France)
-testDat(dat.Regions)
 if(!is.na(URL_Deps)){
-  testDat(dat.Deps)
+  dat.Deps <- merge(dat.Deps, tests.Deps, all = TRUE, by = c("dateMid", "dep"))
 }
 
 ```
+
+## Geographic data
+
+### Regions 
+
+```{r}
+# Codes regions
+URL <- "https://www.data.gouv.fr/en/datasets/r/34fc7b52-ef11-4ab0-bc16-e1aae5c942e7"
+dataFile <- "../data/coderegions.csv"
+
+if(!file.exists(dataFile)){
+  download.file(URL, dataFile)
+}
+
+codesRegions <- read.csv(dataFile, sep = ",", stringsAsFactors = FALSE)
+
+# Turn into dictionary
+regs <- codesRegions$nom_region
+names(regs) <- as.character(codesRegions$code_region)
+
+# Add region name
+dat.Regions$reg_name <- regs[as.character(dat.Regions$reg)]
+
+unique(dat.Regions$reg_name)
+unique(dat.Regions[which(is.na(dat.Regions$reg_name)), "reg"])
+
+```
+
+
+### Departments
+
+```{r}
+# Add name
+deps <- read.csv("../data/departement2020.csv", stringsAsFactors = FALSE)
+# Turn into dictionnary
+dps <- deps$libelle
+names(dps) <- as.character(deps$dep)
+
+if(!is.na(URL_Deps)){
+  dat.Deps$departement <- dps[as.character(dat.Deps$dep)]
+
+  unique(dat.Deps$departement)
+  
+  unique(dat.Deps[which(is.na(dat.Deps$departement)), "dep"])
+  
+  # 977 Saint-Barthélemy, 978 Saint-Martin
+}
+
+```
+
+
 
 # (tmp Extractions)
 
@@ -687,7 +776,7 @@ plotRegTx("Corse")
 ## Proportions / Nb tests
 
 ```{r}
-plotMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE, add = FALSE){
+plotMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE, add = FALSE, pch = 16){
   # quot: boolean to decide whether to plot the daily values (averaged over 7 days) [TRUE], or the sum over the last 7 days [FALSE]
   
   if(quot){denom <- 7}else{denom <- 1}
@@ -708,7 +797,7 @@ plotMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE, add 
   if(!add){
     plot(as.Date(time), p, ylim = c(0, ymax), frame.plot = FALSE, 
      xlab = "", ylab = "p", yaxs = "i", xaxs = "i", 
-     type = "p", col = col, pch = 16)
+     type = "p", col = col, pch = pch)
     par(xpd = FALSE)
   mtext("  Parmi les n(t) tests interprétables recherchant la mutation
   Intervalle de confiance binomial sur ce nombre de tests n(t)", side = 3, cex = 0.6, adj = 0, line = -1)
@@ -723,14 +812,14 @@ plotMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE, add 
   }
   
   mtext("Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
-Code : https://github.com/flodebarre/nouveauCriblage", side = 1, line = 3.5, cex = 0.6, col = gray(0.5), adj = 0, family = "mono")
+Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/mutations.Rmd", side = 1, line = 3.5, cex = 0.6, col = gray(0.5), adj = 0, family = "mono")
 
   title(main = thetit)
 
   }else{ # Else of add
     par(xpd = TRUE)
     points(as.Date(time), p,  
-     type = "p", col = col, pch = 16)
+     type = "p", col = col, pch = pch)
   }
   par(xpd = FALSE)
   arrows(x0 = xx, x1 = xx, 
@@ -743,7 +832,7 @@ Code : https://github.com/flodebarre/nouveauCriblage", side = 1, line = 3.5, cex
 
 
 ```{r}
-plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 10^-6, quot = TRUE, scale = "logit", addNotes = TRUE, addDeliss = FALSE, timedl, test0dl, test1dl, coldl = colDL, addLegend = FALSE){
+plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 10^-6, quot = TRUE, scale = "logit", addNotes = TRUE, addDeliss = FALSE, timedl, test0dl, test1dl, coldl = colDL, addLegend = FALSE, add = FALSE, pch = 16){
   # -- here showing n0/(n0+n1) --
   # time: vector of values of times of sample collection
   # test0: vector of numbers of tests with value 0
@@ -761,6 +850,8 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
   # test1dl: C1 values délissées
   # coldl: color for the délissées data
   # addLegend: whether to add legend
+  # add: if add to already existing plot
+  
   if(quot){denom <- 7}else{denom <- 1}
   n <- (test1 + test0) / denom
   p <- test0 / (test1 + test0)
@@ -813,7 +904,10 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
      xmax <- xmax + 3
   }
   
-  plot(as.Date(time), changeScale(p), 
+
+  if(!add){
+    # Create new plot
+    plot(as.Date(time), changeScale(p), 
        ylim = c(changeScale(ymin), changeScale(ymax)), 
        xlim = c(xmin, xmax),
        frame.plot = FALSE, 
@@ -821,19 +915,21 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
        col = col, pch = 16, 
        axes = FALSE, 
        yaxs = "i", type = "n")
+
+      # Add graduations
+      if(scale == "linear"){
+        colGrad <- gray(0.85)
+        for(i in seq(0, 1, by = 0.1)){
+          abline(h = i, col = colGrad, lwd = 1.2)
+        }
+        for(i in seq(0.05, 0.95, by = 0.1)){
+          #      abline(h = i, col = colGrad, lwd = 0.8)
+        }
+        abline(h = 0.5, col = colGrad, lwd = 3)
+      }
+      
+    }  
   
-  
-    # Add graduations
-  if(scale == "linear"){
-    colGrad <- gray(0.85)
-    for(i in seq(0, 1, by = 0.1)){
-      abline(h = i, col = colGrad, lwd = 1.2)
-    }
-    for(i in seq(0.05, 0.95, by = 0.1)){
-#      abline(h = i, col = colGrad, lwd = 0.8)
-    }
-      abline(h = 0.5, col = colGrad, lwd = 3)
-  }
 
   
   # if(addNotes){
@@ -853,11 +949,10 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
   #mtext("date", line = 2, side = 1)  
 
   xx <- base::as.Date(time)[keepPts]
-  
 
   # Add data points (lissés)    
   points(as.Date(time), changeScale(p), 
-       type = "p", col = col, pch = 16, cex = cexL)
+       type = "p", col = col, pch = pch, cex = cexL)
   
   # Add confidence interval as arrows
   arrows(x0 = xx, 
@@ -901,34 +996,38 @@ Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/mutations
     par(xpd = FALSE)
   }
 
-  # Axes: 
-  # horizontal
-  xxl <- seq(as.Date(min(time)), as.Date(max(time)) + dxx, by = "day")
-  axis(1, at = xxl, 
-       labels = format(seq(as.Date(min(time)), as.Date(max(time)) + dxx, by = "day"), "%d/%m"), 
-       las = 2, 
-       cex.axis = 0.6, 
-       lwd = 0)
   
-  # Vertical axes
-  if(scale == "linear"){
-    axis(2, lwd = 0)
-    axis(4, lwd = 0)
+  if(!add){
+    # Axes: 
+    # horizontal
+    xxl <- seq(as.Date(min(time)), as.Date(max(time)) + dxx, by = "day")
+    axis(1, at = xxl, 
+         labels = format(seq(as.Date(min(time)), as.Date(max(time)) + dxx, by = "day"), "%d/%m"), 
+         las = 2, 
+         cex.axis = 0.6, 
+         lwd = 0)
+    
+    # Vertical axes
+    if(scale == "linear"){
+      axis(2, lwd = 0)
+      axis(4, lwd = 0)
+    }
+    if(scale == "logit"){
+      yvalues <- c(0.999, 0.99, 0.9, 0.75, 0.5, 0.25, 0.1, 0.05, 0.025, 0.01, 0.001)
+      axis(2, at = changeScale(yvalues), labels = yvalues)
+      axis(4, at = changeScale(yvalues), labels = yvalues)
+    }
+    
+    if(scale == "linear"){
+      mtext("Proportion criblage sans mutation L452R", side = 2, las = 0, line = 2.5)
+    }
+    if(scale == "logit"){
+      mtext(expression(paste("p"[0], ", logit scale")), side = 2, las = 0, line = 2.5)
+    }
+    
+    title(main = thetit)
+    
   }
-  if(scale == "logit"){
-    yvalues <- c(0.999, 0.99, 0.9, 0.75, 0.5, 0.25, 0.1, 0.05, 0.025, 0.01, 0.001)
-    axis(2, at = changeScale(yvalues), labels = yvalues)
-    axis(4, at = changeScale(yvalues), labels = yvalues)
-  }
-  
-  if(scale == "linear"){
-    mtext("Proportion criblage sans mutation L452R", side = 2, las = 0, line = 2.5)
-  }
-  if(scale == "logit"){
-    mtext(expression(paste("p"[0], ", logit scale")), side = 2, las = 0, line = 2.5)
-  }
-  
-  title(main = thetit)
   print(p[length(p)])
 }
 
@@ -976,6 +1075,8 @@ for(reg in unique.noNA(dat.Regions$reg_name)){
 
 ### Specific examples
 
+-  PACA and B.1.640.2
+
 ```{r}
 unique(dat.Regions$nom_reg)
 tmp <- dat.Regions[which(dat.Regions$nom_reg == "Provence-Alpes-Côte d'Azur" & dat.Regions$dateMid >= "2021-11-15"), ]
@@ -992,8 +1093,70 @@ legend(x = as.Date("2021-11-16"), y = 0.8,
                   "Proportion non-L452R and non-E484K", 
                   "Proportion E484K"), 
        pch = 16, box.lwd = 0)
+```
+
+-  Comparing targets
+
+```{r}
+
+typePlot <- "France"
+startDate <- "2021-10-20"
+
+if(typePlot == "IDF"){
+  tmp <- dat.Regions[which(dat.Regions$nom_reg == "Ile-de-France" & dat.Regions$dateMid >= startDate), ]
+  rg <- "Île-de-France"
+}
+if(typePlot == "France"){
+  tmp <- dat.France[which(dat.France$dateMid >= startDate), ]
+  rg <- "France"
+}
+
+
+head(tmp)
+
+pchNew <- 2
+pchOld <- 6
+
+pchAC <- 18
+pchD <- 15
+
+compareOldNew <- FALSE
+
+plotMut(time = tmp$dateMid, test1 = tmp$nb_C0, test0 = tmp$nb_C1, col = col452R, thetit = rg)
+
+if(compareOldNew){
+  plotMut(time = tmp$dateMid, test1 = tmp$nb_C0.x, test0 = tmp$nb_C1.x, col = col452R, thetit = rg, add = TRUE, pch = pchNew)
+  plotMut(time = tmp$dateMid, test1 = tmp$nb_C0.y, test0 = tmp$nb_C1.y, col = col452R, thetit = rg, add = TRUE, pch = pchOld)
+}
+
+
+plotMut(time = tmp$dateMid, test0 = tmp$nb_D0, test1 = tmp$nb_D1, col = colD, thetit = rg, add = TRUE, pch = pchD)
+
+plotMut(time = tmp$dateMid, test1 = tmp$nb_A0C0, test0 = tmp$nb_A01C01 - tmp$nb_A0C0, col = colAC, thetit = rg, add = TRUE, pch = pchAC)
+
+legend(x = as.Date("2021-11-16"), 
+       y = 0.9, 
+       col = c(col452R, colAC, colD), 
+       pch = c(16, pchAC, pchD), 
+       legend = c("non-L452R", "non-E484K & non-L452R", "D1"), 
+       box.lwd = -1)
+
+xx <- seq(min(tmp$dateMid), max(tmp$dateMid), by = "day")
+axis(1, at = xx, labels = rep("", length(xx)), lwd = 0, lwd.ticks = 1, tck = -0.01)
+
+
+for(i in dev.list())dev.off()
+plotMut0(time = tmp$dateMid, test0 = tmp$nb_C0, test1 = tmp$nb_C1, col = col452R, thetit = rg, ymin = 0.01, ymax = 0.99)
+
+plotMut0(time = tmp$dateMid, test0 = tmp$nb_C0.y, test1 = tmp$nb_C1.y, col = col452R, thetit = rg, ymin = 0.01, ymax = 0.99)
+
+plotMut0(time = tmp$dateMid, test0 = tmp$nb_C0, test1 = tmp$nb_C1, col = col452R, thetit = rg, ymin = 0.01, ymax = 0.99)
+
 
 ```
+
+
+
 
 We cannot do this anymore with the new data...
 
@@ -1103,19 +1266,19 @@ plotRegC0("Occitanie")
 plotRegC0("Corse")
 ```
 
-```{r IDF}
+```{r IDF, eval = FALSE}
 layout(1)
 plotRegC0("Île-de-France", addNotes = TRUE, ymax = 1, ymin = 0, addLegend = TRUE, scale = "linear")
 ```
 
-```{r predict}
+```{r predict, eval = FALSE}
 
 source("projections.R")
 ```
 
 #### Number tests, delisses
 
-```{r}
+```{r, eval = FALSE}
 colCrib <- "#91D900"
 colTest <- gray(0.5)
 
@@ -1155,7 +1318,7 @@ plotCribTest <- function(regname, minDate = "2021-11-15"){
 ```
 
 
-```{r NbTestsCribDeliss, fig.width=10, fig.height=13}
+```{r NbTestsCribDeliss, fig.width=10, fig.height=13, eval = FALSE}
 layout(matrix(1:15, ncol = 3, byrow = TRUE))
 
 # 1 Plot legend
@@ -1245,15 +1408,282 @@ for(dep in sort(unique.noNA(dat.Deps$departement))){
 }
 ```
 
+
+## Variant numbers
+
+### Generic
+
 ```{r}
-dep <- "Val-de-Marne"
-dat <- dat.Deps[which(dat.Deps$departement == dep & dat.Deps$date2 >= "2021-11-01"), ]
-  plotCaseMut(time = dat$date2, test0 = dat$nb_B0, test1 = dat$nb_B1, col = col484Q, thetit = paste0("E484Q, ", dep))
-  plotCaseMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", dep))
-  plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", dep))
-  plotMut0(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", dep), ymin = 0.001, ymax = 0.5)
-  plotCaseMut(time = dat$date2, test0 = dat$nb_A0, test1 = dat$nb_A1, col = col484K, thetit = paste0("E484K, ", dep))
+fx <- 0.5
+
+plotVariants <- function(time, test0, test1, pos, tot, population = 10^5, ymax = NA){
+  # time: time vector (mid dates if sliding windows)
+  # test0: abundances of 0 results in criblage
+  # test1: abundances of 1 results in criblage
+  # pos: number of positive tests (unaveraged)
+  # tot: total number of tests done
+  # pop: population size, to express as per 10^5 inhabitants (default value gives absolute numbers)
+  # ymax: ymax value on the plot
+  
+  n <- (test0 + test1)/7 # Sample size; divide by 7 because values are given as sums over 7 days
+  p <- (test1/7) / n # Proportion test1
+  SE <- sqrt(p * (1-p) / n) # Standard error
+  
+  # Scaled population
+  pop <- population / 10^5
+  
+  # Positivity rate
+  tpos <- pos/tot
+  # Dirty trick to get some error on the number of positive tests, using the positivity rate
+  SE2 <- sqrt(tpos * (1 - tpos) / tot)
+  posmin <- tot * (tpos - 1.96 * SE2)
+  posmax <- tot * (tpos + 1.96 * SE2)
+  posmin7j <- sliding.window(posmin)
+  posmax7j <- sliding.window(posmax)
+  
+  
+  # Check that days are consecutive
+  stopifnot(all(as.numeric(diff(time)) == 1))
+  
+  # Compute sliding window average for positive tests
+  pos7j <- sliding.window(pos)
+  
+  if(is.na(ymax)){
+    ymax <- 1.1 * max(pos7j, na.rm = TRUE)/pop
+  }
+  plot(c(time[1], time), c(0, pos7j/pop), 
+       type = "n", axes = FALSE, 
+       xlab = "", ylab = "", 
+       ylim = c(0, ymax))
+  #rect(xleft = time - fx, 
+  #     xright = time + fx, 
+  #     ybottom = 0, 
+  #     ytop = pos7j)
+  
+  colBorder <- "white"
+  
+  # Just cases
+  rect(xleft = time - fx, 
+       xright = time + fx, 
+       ybottom = 0, 
+       ytop = pos7j/pop, 
+       col = gray(0.7), border = NA)
+  
+  rect(xleft = time - fx, 
+       xright = time + fx, 
+       ybottom = 0, 
+       ytop = pos7j/pop * (1-p), 
+       col = colGrad[7], border = colGrad[7])
+  
+  rect(xleft = time - fx, 
+       xright = time + fx, 
+       ybottom = pos7j/pop * (1-p), 
+       ytop = pos7j/pop, 
+       col = colGrad[1], border = colGrad[1])
+  
+  
+  # 95% interval, bottom
+  rect(xleft = time - fx, 
+       xright = time + fx, 
+       ybottom = posmin7j/pop * (1 - p - 1.96*SE), 
+       ytop = pos7j/pop * (1 - p), 
+       col = colGrad[6], border = NA)
+  
+  # 95% interval, top
+  rect(xleft = time - fx, 
+       xright = time + fx, 
+       ybottom = pos7j/pop * (1 - p), 
+       ytop = posmax7j/pop * (1 - p + 1.96*SE), 
+       col = colGrad[2], border = NA)
+  
+  # 75% interval, bottom
+  rect(xleft = time - fx, 
+       xright = time + fx, 
+       ybottom = posmin7j/pop * (1 - p - 1.15*SE), 
+       ytop = pos7j/pop * (1 - p), 
+       col = colGrad[5], border = NA)
+  
+  # 75% interval, top
+  rect(xleft = time - fx, 
+       xright = time + fx, 
+       ybottom = pos7j/pop * (1 - p), 
+       ytop = posmax7j/pop * (1 - p + 1.15*SE), 
+       col = colGrad[3], border = NA)
+  
+  # 50% interval
+  rect(xleft = time - fx, 
+       xright = time + fx, 
+       ybottom = posmin7j/pop * (1 - p - 0.68*SE), 
+       ytop = posmax7j/pop * (1 - p + 0.68*SE), 
+       col = colGrad[4], border = NA)
+  
+  # Borders
+  rect(xleft = time - fx,
+       xright = time + fx,
+       ybottom = 0,
+       ytop = pos7j/pop,
+       col = gray(0, 0), border = colBorder, lwd = 0.5)
+  
+  axis(2, pos = min(dat$dateMid) + 3 - fx, lwd = 0, lwd.ticks = 1, mgp = c(0, 0.3, 0), tck = -0.015)
+  axis(4, pos = max(dat$dateMid) - 3 + fx, lwd = 0, lwd.ticks = 1, mgp = c(0, 0.3, 0), tck = -0.015)
+  
+  xx <- seq(min(dat$dateMid) + 3, max(dat$dateMid) - 3, by = "day")
+  axis(1, at = xx, las = 3, labels = format(xx, "%d/%m"), mgp = c(0, 0.2, 0), pos = 0, lwd = 0, cex.axis = 0.8)
+
+}
+
+
+# Function to plot them by region
+plotVariantsReg.C.bypop <- function(region, tit = NA, minDate = "2021-11-12", ymax = NA){
+  # region: region name
+  # tit: plot title
+  # minimum date for the plot (3 days before the desired date, because of 7-day averaging)
+  if(is.na(tit)){tit  = region}
+  
+  dat <- dat.Regions[which(dat.Regions$dateMid >= minDate & dat.Regions$reg_name == region), ]
+  
+  plotVariants(time = dat$dateMid, 
+               test1 = dat$nb_C0, 
+               test0 = dat$nb_C1,
+               pos = dat$P,
+               tot = dat$T, 
+               population = unique(dat$pop), 
+               ymax = ymax)
+  
+  title(main = tit)
+}
+  
+
+
 ```
+
+
+### France
+
+```{r figFranceNbC0}
+layout(1)
+minDate <- "2021-11-12"
+dat <- dat.France[which(dat.France$dateMid >= minDate), ]
+par(las = 1)
+plotVariants(time = dat$dateMid, 
+               test1 = dat$nb_C0, 
+               test0 = dat$nb_C1,
+               pos = dat$P,
+               tot = dat$T)
+title("France")
+
+```
+
+### Regions
+
+```{r, fig.width=10, fig.height=15}
+dat <- dat.Regions[which(dat.Regions$dateMid >= minDate & dat.Regions$reg_name == "Île-de-France"), ]
+tit <- "IDF"
+
+par(las = 1)
+plotVariants(time = dat$dateMid, 
+               test1 = dat$nb_C0, 
+               test0 = dat$nb_C1,
+               pos = dat$P,
+               tot = dat$T, 
+               population = unique(dat$pop))
+
+time <- dat$dateMid
+test1 <- dat$nb_C0
+test0 <- dat$nb_C1
+pos <- dat$P
+tot <- dat$T
+
+```
+
+```{r figRegionsMapNbC0, fig.width=7, fig.height=10}
+plotVariantsReg <- plotVariantsReg.C.bypop
+
+#
+#ix <- which(dat.France$date2 > "2021-11-01")
+#plotMut0(dat.France[ix, "date2"], dat.France[ix, "nb_C0"], dat.France[ix, "nb_C1"], col = col452R, thetit = "L452R, France", ymin = 10^-2, ymax = 0.6)
+
+ymaxpic <- 600
+
+layout(matrix(1:15, ncol = 3, byrow = TRUE))
+par(las = 1)
+
+# 1 Plot legend
+par(mar = c(0, 0, 0, 0))
+plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.2, 1), ylim = c(-1, 0.5))
+legend(x = -0.15, y = 0.2, legend = c("Variants sans L452R, C0 \n(Omicron, mais aussi B.1.640)", "Variants avec L452R, C1 \n(Delta)", "(Marge d'erreur)"), 
+          col = c(colGrad[1], colGrad[7], colGrad[4]), 
+          pch = 15, 
+          box.col = gray(0, 0), bty = "n", cex = 1, title = "Estimations des nombres de cas quotidiens, 
+(pour 100 000 habitants ; moyenne 7 jours)", pt.cex = 2, 
+y.intersp = 1.5)
+
+# 2 HDF
+#layout(1)
+marplot <- c(2, 2, 2, 2)
+par(mar = marplot)
+plotVariantsReg("Hauts-de-France", ymax = ymaxpic)
+
+
+# 3 Plot credits
+par(mar = c(0, 0, 0, 0))
+plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.1, 1), ylim = c(-1, 1))
+text(0, 0, paste0("@flodebarre, ", max(dat.France$date2, na.rm = TRUE) + 3, "
+
+Data:
+https://www.data.gouv.fr/fr/datasets/
+donnees-de-laboratoires-pour-le-
+depistage-indicateurs-sur-les-mutations/
+and 
+https://www.data.gouv.fr/fr/datasets/
+donnees-relatives-aux-resultats-des-
+tests-virologiques-covid-19/
+
+Code: https://github.com/flodebarre/
+nouveauCriblage/blob/main/scripts/mutations.Rmd
+"), adj = 0, cex = 0.6, family = "mono")
+
+par(mar = marplot)
+
+# 4 NOR
+plotVariantsReg("Normandie", ymax = ymaxpic)
+
+# 5 IDF
+# 
+#layout(1)
+plotVariantsReg("Île-de-France", ymax = ymaxpic)
+
+# 6 GE
+plotVariantsReg("Grand Est", ymax = ymaxpic)
+
+# 7 BRE
+plotVariantsReg("Bretagne", ymax = ymaxpic)
+
+# 8 CVL
+plotVariantsReg("Centre-Val de Loire", ymax = ymaxpic)
+
+# 9 BFC
+plotVariantsReg("Bourgogne-Franche-Comté", ymax = ymaxpic)
+
+# 10 PDL
+plotVariantsReg("Pays de la Loire", ymax = ymaxpic)
+
+# 11 ARA
+plotVariantsReg("Auvergne-Rhône-Alpes", ymax = ymaxpic)
+
+# 12 PACA
+plotVariantsReg("Provence-Alpes-Côte d'Azur", ymax = ymaxpic)
+
+# 13 NAQ
+plotVariantsReg("Nouvelle-Aquitaine", ymax = ymaxpic)
+
+# 14 OCC
+plotVariantsReg("Occitanie", ymax = ymaxpic)
+
+# 15 COR
+plotVariantsReg("Corse", ymax = ymaxpic)
+```
+
 
 ## Geographic
 ### L452R 
@@ -1369,7 +1799,7 @@ title("Proportion de L452R")
 
   mtext("  @flodebarre
   Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
-  Code : https://github.com/flodebarre/nouveauCriblage
+  Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/mutations.Rmd
   Idée carte : Les Decodeurs, Le Monde https://tinyurl.com/carteFRDecLM", side = 1, line = 1, cex = 0.6, col = gray(0.5), adj = 0)
   
 cexLegend <- 0.6
@@ -1599,7 +2029,7 @@ title("Absence de L452R, échelle logit")
 
   mtext(paste0("  @flodebarre, mise à jour ", Sys.Date(), "
   Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
-  Code : https://github.com/flodebarre/nouveauCriblage
+  Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/mutations.Rmd
   Idée carte : Les Decodeurs, Le Monde https://tinyurl.com/carteFRDecLM"), side = 1, line = 1, cex = 0.525, col = gray(0.5), adj = 0, family = "mono")
   
 cexLegend <- 0.55
@@ -1717,7 +2147,7 @@ title("Proportion de E484K/Q")
 
   mtext("  @flodebarre
   Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
-  Code : https://github.com/flodebarre/nouveauCriblage
+  Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/mutations.Rmd
   Idée carte : Les Decodeurs, Le Monde https://tinyurl.com/carteFRDecLM", side = 1, line = 1, cex = 0.6, col = gray(0.5), adj = 0)
   
 cexLegend <- 0.6
@@ -1727,14 +2157,3 @@ et au moins ", thrntot, " criblages sur la semaine.
 Itv confiance sur nb crib. moyen 7 derniers jours.")), cex = cexLegend, bty = "n")
 ```
 
-
-# Other
-
-```{r}
-dat <- dat.Deps[dat.Deps$departement == "Somme", ]
-  plotNbCrib(dat)
-  title("Somme")
-  
-    plotMut(time = dat$date2, test0 = dat$nb_C0, test1 = dat$nb_C1, col = col452R, thetit = paste0("L452R, ", "Somme"), ymax = ymax)
-
-```
