@@ -77,7 +77,7 @@ unique.noNA <- function(x){
 ```
 
 ```{r results='hide'}
-# Sliding window functio
+# Sliding window function
 source("usefulFunctions.R")
 ```
 
@@ -195,6 +195,176 @@ tests.France$T7j <- sliding.window(tests.France$T)
 # need to do it for each location independently
 ```
 
+## Delissage
+
+```{r defineDelissage}
+deliss <- function(s, print = FALSE){
+  # s vector to be delissé 
+  # print: bool, whether to print diagnotic outputs
+  
+  # Create output of daily data
+  n <- c(rep(0, 7), rep(NA, length(s) - 7))
+  # Label days along the week
+  values <- rep(1:7, ceiling(length(s)/7))[1:length(s)]
+
+  # Recursion; Loop on values
+  for(i in 8:length(n)){
+    n[i] <- s[i] - s[i-1] + n[i-7]
+  }
+  
+  # Find the minimum values for each of the first 7 points
+  # such that there is no negative value
+  for(j in 1:7){ # Days along a week
+    n[j] <- - min(n[values == j])
+  }
+  if(print) print(n)
+  
+  # Check how many tests are still missing
+  difference <- s[7] - sum(n[1:7])
+  if(print) print(difference)
+  
+  if(difference < 0) error("Investigate, difference is negative")
+  
+  # If we have not assigned all values
+  if(difference > 0){
+    # Repeat delissage to remove negative values
+    for(i in 8:length(n)){
+      n[i] <- s[i] - s[i-1] + n[i-7]
+    }
+    
+    # Compute the distribution of numbers of tests along the days of the week
+    aggn <- aggregate(n, by = list(values), FUN = sum)
+    sumx <- sum(aggn$x)
+    if(sumx > 0){
+      aggn$p <- aggn$x / sumx
+    }else{ # Can be = 0...!
+      aggn$p <- aggn$x
+    }
+    
+    # Assign the left-over values according to this distribution
+    newn <- rep(NA, 7)
+    newn[1:6] <- round(aggn[1:6, "p"] * difference)
+    newn[7] <- difference - sum(newn[1:6])
+    if(print) print(newn)
+    
+    # If we had too many tests in the previous days, and the last one ends up negative,
+    # remove values before
+    while(newn[7] < 0){
+      # Choose one day at random
+      k <- sample(1:6, size = 1)
+      if(newn[k] > 0){ # If we can remove a day
+        newn[k] <- newn[k] - 1 # Remove it
+        newn[7] <- difference - sum(newn[1:6]) # Recompute newn[7]
+      }
+    }
+    
+    if(print) print(newn)
+    stopifnot(all(newn >= 0)) # Security check
+    
+    # Add them to the ns
+    n[1:7] <- n[1:7] + newn
+  }
+  
+  # Repeat delissage with these values
+  for(i in 8:length(n)){
+    n[i] <- s[i] - s[i-1] + n[i-7]
+  }
+  
+  n
+}
+
+# Need to be careful with dates
+delissWithDate <- function(dat, cols, print = FALSE){
+  # dat our dataset, with time columns
+  # cols columns to be "delisee", as vector of chars
+  # Check that all dates are consecutive
+  dates <- as.Date(as.Date(substring(dat$semaine, 12, 21)))
+  stopifnot(all(as.numeric(diff(dates)) == 1))
+  out <- dat
+  for(col in cols){
+    out[, paste0(col, ".dl")] <- deliss(dat[, col], print = print)
+  }
+  out$dateDeliss <- dates
+  out 
+}
+
+```
+
+
+```{r delissage}
+# Column names in the datasets
+cols.old <- c("nb_A0", "nb_A1", "nb_B0", "nb_B1", "nb_C0", "nb_C1")
+cols.new <- c("nb_A0", "nb_A1", "nb_C0", "nb_C1", "nb_D0", "nb_D1", "nb_A0C0", "nb_A01C01")
+
+#------
+
+# France
+dat.France.old <- delissWithDate(dat.France.old, cols.old)
+dat.France.new <- delissWithDate(dat.France.new, cols.new)
+
+#------
+
+# By regions
+## Old
+regs <- sort(unique(dat.Regions.old$reg))
+# Initialize
+i <- 1
+tmpdat <- dat.Regions.old[which(dat.Regions.old$reg == regs[i]), ]
+tmp <- delissWithDate(tmpdat, cols.old)
+
+for(i in 2:length(regs)){
+  tmpdat <- dat.Regions.old[which(dat.Regions.old$reg == regs[i]), ]
+  tmp <- rbind(tmp, delissWithDate(tmpdat, cols.old))
+}
+dat.Regions.old <- tmp
+
+#delissWithDate(tmpdat, cols.old, print = TRUE)
+## New
+regs <- sort(unique(dat.Regions.new$reg))
+# Initialize
+i <- 1
+tmpdat <- dat.Regions.new[which(dat.Regions.new$reg == regs[i]), ]
+tmp <- delissWithDate(tmpdat, cols.new)
+
+for(i in 2:length(regs)){
+  tmpdat <- dat.Regions.new[which(dat.Regions.new$reg == regs[i]), ]
+  tmp <- rbind(tmp, delissWithDate(tmpdat, cols.new))
+}
+dat.Regions.new <- tmp
+
+
+#------
+
+# By départements
+## Old
+deps <- sort(unique(dat.Deps.old$dep))
+# Initialize
+i <- 1
+tmpdat <- dat.Deps.old[which(dat.Deps.old$dep == deps[i]), ]
+tmp <- delissWithDate(tmpdat, cols.old)
+# Loop through deps
+for(i in 2:length(deps)){
+  tmpdat <- dat.Deps.old[which(dat.Deps.old$dep == deps[i]), ]
+  tmp <- rbind(tmp, delissWithDate(tmpdat, cols.old))
+}
+dat.Deps.old <- tmp
+
+## New
+deps <- sort(unique(dat.Deps.new$dep))
+# Initialize
+i <- 1
+tmpdat <- dat.Deps.new[which(dat.Deps.new$dep == deps[i]), ]
+tmp <- delissWithDate(tmpdat, cols.new)
+# Loop through deps
+for(i in 2:length(deps)){
+  tmpdat <- dat.Deps.new[which(dat.Deps.new$dep == deps[i]), ]
+  tmp <- rbind(tmp, delissWithDate(tmpdat, cols.new))
+}
+dat.Deps.new <- tmp
+```
+
+
+
 
 ## Combine the old and new datasets
 
@@ -240,7 +410,7 @@ computeSum <- function(dat, col){
 France
 
 ```{r mergeFrance}
-tmp.France <- merge(dat.France.new, dat.France.old, all = TRUE, by = c("fra", "semaine"))
+tmp.France <- merge(dat.France.new, dat.France.old, all = TRUE, by = c("fra", "semaine", "dateDeliss"))
 dim(dat.France.new)
 dim(dat.France.old)
 dim(tmp.France)
@@ -249,6 +419,7 @@ head(tmp.France)
 # Format date
 tmp.France$date1 <- as.Date(substring(tmp.France$semaine, 1, 10))
 tmp.France$date2 <- as.Date(substring(tmp.France$semaine, 12, 21))
+tmp.France$dateDeliss <- tmp.France$date2
 
 # Mid-interval date
 tmp.France$dateMid <- tmp.France$date2 - 3
@@ -280,12 +451,19 @@ compare.xy(tmp.France, "nb_C0")
 # C1
 tmp.France$nb_C1 <- computeSum(tmp.France, "nb_C1")
 compare.xy(tmp.France, "nb_C1")
+
+# .dl
+tmp.France$nb_A0.dl <- computeSum(tmp.France, "nb_A0.dl")
+tmp.France$nb_A1.dl <- computeSum(tmp.France, "nb_A1.dl")
+tmp.France$nb_C0.dl <- computeSum(tmp.France, "nb_C0.dl")
+tmp.France$nb_C1.dl <- computeSum(tmp.France, "nb_C1.dl")
+
 ```
 
 Regions
 
 ```{r mergeRegions}
-tmp.Regions <- merge(dat.Regions.new, dat.Regions.old, all = TRUE, by = c("reg", "semaine"))
+tmp.Regions <- merge(dat.Regions.new, dat.Regions.old, all = TRUE, by = c("reg", "semaine", "dateDeliss"))
 dim(dat.Regions.new)
 dim(dat.Regions.old)
 dim(tmp.Regions)
@@ -295,12 +473,14 @@ head(dat.Regions.new)
 # Format date
 tmp.Regions$date1 <- as.Date(substring(tmp.Regions$semaine, 1, 10))
 tmp.Regions$date2 <- as.Date(substring(tmp.Regions$semaine, 12, 21))
+tmp.Regions$dateDeliss <- tmp.Regions$date2
 
 # Mid-interval date
 tmp.Regions$dateMid <- tmp.Regions$date2 - 3
 
-  # Rewrite time as days since beginning of the data
-  tmp.Regions$time <- tmp.Regions$dateMid - min(tmp.Regions$dateMid)
+# Rewrite time as days since beginning of the data
+tmp.Regions$time <- tmp.Regions$dateMid - min(tmp.Regions$dateMid)
+  
 
 
 # nb_crib
@@ -327,13 +507,20 @@ compare.xy(tmp.Regions, "nb_C0")
 # C1
 tmp.Regions$nb_C1 <- computeSum(tmp.Regions, "nb_C1")
 compare.xy(tmp.Regions, "nb_C1")
+
+
+# .dl
+tmp.Regions$nb_A0.dl <- computeSum(tmp.Regions, "nb_A0.dl")
+tmp.Regions$nb_A1.dl <- computeSum(tmp.Regions, "nb_A1.dl")
+tmp.Regions$nb_C0.dl <- computeSum(tmp.Regions, "nb_C0.dl")
+tmp.Regions$nb_C1.dl <- computeSum(tmp.Regions, "nb_C1.dl")
 ```
 
 Departements
 
 ```{r mergeDeps}
 if(!is.na(URL_Deps)){
-  tmp.Deps <- merge(dat.Deps.new, dat.Deps.old, all = TRUE, by = c("dep", "semaine"))
+  tmp.Deps <- merge(dat.Deps.new, dat.Deps.old, all = TRUE, by = c("dep", "semaine", "dateDeliss"))
   dim(dat.Deps.new)
   dim(dat.Deps.old)
   dim(tmp.Deps)
@@ -343,6 +530,7 @@ if(!is.na(URL_Deps)){
   # Format date
   tmp.Deps$date1 <- as.Date(substring(tmp.Deps$semaine, 1, 10))
   tmp.Deps$date2 <- as.Date(substring(tmp.Deps$semaine, 12, 21))
+  tmp.Deps$dateDeliss <- tmp.Deps$date2
   
   # Mid-interval date
   tmp.Deps$dateMid <- tmp.Deps$date2 - 3
@@ -353,28 +541,35 @@ if(!is.na(URL_Deps)){
   
   # nb_crib
   tmp.Deps$nb_crib <- computeSum(tmp.Deps, "nb_crib")
-  compare.xy(tmp.Deps, "nb_crib")
+  #compare.xy(tmp.Deps, "nb_crib")
   
   # nb_pos
   tmp.Deps$nb_pos <- tmp.Deps$nb_pos.x # New ones for times >= 2021-01-06
   tmp.Deps[is.na(tmp.Deps$nb_pos), "nb_pos"] <- tmp.Deps[is.na(tmp.Deps$nb_pos), "nb_pos.y"] # Old ones
-  compare.xy(tmp.Deps, "nb_pos")
+  #compare.xy(tmp.Deps, "nb_pos")
   
   # A0
   tmp.Deps$nb_A0 <- computeSum(tmp.Deps, "nb_A0")
-  compare.xy(tmp.Deps, "nb_A0")
+  #compare.xy(tmp.Deps, "nb_A0")
   
   # A1
   tmp.Deps$nb_A1 <- computeSum(tmp.Deps, "nb_A1")
-  compare.xy(tmp.Deps, "nb_A1")
+  #compare.xy(tmp.Deps, "nb_A1")
   
   # C0
   tmp.Deps$nb_C0 <- computeSum(tmp.Deps, "nb_C0")
-  compare.xy(tmp.Deps, "nb_C0")
+  #compare.xy(tmp.Deps, "nb_C0")
   
   # C1
   tmp.Deps$nb_C1 <- computeSum(tmp.Deps, "nb_C1")
-  compare.xy(tmp.Deps, "nb_C1")
+  #compare.xy(tmp.Deps, "nb_C1")
+  
+  # .dl
+  tmp.Deps$nb_A0.dl <- computeSum(tmp.Deps, "nb_A0.dl")
+  tmp.Deps$nb_A1.dl <- computeSum(tmp.Deps, "nb_A1.dl")
+  tmp.Deps$nb_C0.dl <- computeSum(tmp.Deps, "nb_C0.dl")
+  tmp.Deps$nb_C1.dl <- computeSum(tmp.Deps, "nb_C1.dl")
+
 
 }else{
   tmp.Deps <- dat.Deps.old
@@ -393,67 +588,6 @@ dat.Regions <- tmp.Regions
 dat.Deps <- tmp.Deps
 ```
 
-
-
-## Add dates
-
-```{r, eval = FALSE}
-# Already done with the new format!
-
-
-# Format date
-dat.France$date1 <- as.Date(substring(dat.France$semaine, 1, 10))
-dat.France$date2 <- as.Date(substring(dat.France$semaine, 12, 21))
-
-# Mid-interval date
-dat.France$dateMid <- dat.France$date2 - 3
-
-# Rewrite time as days since beginning of the data
-dat.France$time <- dat.France$dateMid - min(dat.France$date2)
-
-
-# Format date
-dat.France.old$date1 <- as.Date(substring(dat.France.old$semaine, 1, 10))
-dat.France.old$date2 <- as.Date(substring(dat.France.old$semaine, 12, 21))
-
-# Mid-interval date
-dat.France.old$dateMid <- dat.France.old$date2 - 3
-
-
-# Format date
-dat.Regions$date1 <- as.Date(substring(dat.Regions$semaine, 1, 10))
-dat.Regions$date2 <- as.Date(substring(dat.Regions$semaine, 12, 21))
-# Rewrite time as days since beginning of the data
-dat.Regions$time <- dat.Regions$date2 - min(dat.Regions$date2)
-
-# Mid-interval date
-dat.Regions$dateMid <- dat.Regions$date2 - 3
-
-
-# Format date
-dat.Regions.old$date1 <- as.Date(substring(dat.Regions.old$semaine, 1, 10))
-dat.Regions.old$date2 <- as.Date(substring(dat.Regions.old$semaine, 12, 21))
-# Mid-interval date
-dat.Regions.old$dateMid <- dat.Regions.old$date2 - 3
-
-
-# Format date
-dat.Deps$date1 <- as.Date(substring(dat.Deps$semaine, 1, 10))
-dat.Deps$date2 <- as.Date(substring(dat.Deps$semaine, 12, 21))
-# Rewrite time as days since beginning of the data
-dat.Deps$time <- dat.Deps$date2 - min(dat.Deps$date2)
-
-# Mid-interval date
-dat.Deps$dateMid <- dat.Deps$date2 - 3 
-
-
-# Format date
-dat.Deps.old$date1 <- as.Date(substring(dat.Deps.old$semaine, 1, 10))
-dat.Deps.old$date2 <- as.Date(substring(dat.Deps.old$semaine, 12, 21))
-# Mid-interval date
-dat.Deps.old$dateMid <- dat.Deps.old$date2 - 3 
-
-```
 
 
 ## Combine criblage and tests
@@ -556,6 +690,11 @@ points(dat.France$dateMid, dat.France$nb_D1, xlim = c(as.Date("2021-11-15"), Sys
 points(aggReg$dateMid, aggReg$nb_D1, col = 2, pch = 0)
 points(aggDep$dateMid, aggDep$nb_D1, col = 3, pch = 0)
 
+```
+
+
+```{r}
+unique(dat.Deps$time)
 ```
 
 # Plots 
@@ -795,10 +934,9 @@ plotRegTx("Corse")
 ### Generic
 
 ```{r}
-plotMut <- function(time, test0, test1, col, thetit, ymax = 1, quot = TRUE, add = FALSE, pch = 16, annotate = TRUE){
-  # quot: boolean to decide whether to plot the daily values (averaged over 7 days) [TRUE], or the sum over the last 7 days [FALSE]
+plotMut <- function(time, test0, test1, col, thetit, ymax = 1, denom = 7, add = FALSE, pch = 16, annotate = TRUE){
+  # denom: denominator value; 7 for weekly sums, 1 for daily data
   
-  if(quot){denom <- 7}else{denom <- 1}
   n <- (test1 + test0) / denom
   p <- test1 / (test1 + test0)
   
@@ -855,7 +993,7 @@ Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/mutations
 
 
 ```{r}
-plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 10^-6, quot = TRUE, scale = "logit", addNotes = TRUE, addDeliss = FALSE, timedl, test0dl, test1dl, coldl = colDL, addLegend = FALSE, add = FALSE, pch = 16){
+plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 10^-6, denom = 7, scale = "logit", addNotes = TRUE, addDeliss = FALSE, timedl, test0dl, test1dl, coldl = colDL, addLegend = FALSE, add = FALSE, pch = 16){
   # -- here showing n0/(n0+n1) --
   # time: vector of values of times of sample collection
   # test0: vector of numbers of tests with value 0
@@ -864,7 +1002,7 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
   # thetit: title of the plot
   # ymin: min y value
   # ymax: max y value
-  # quot: (quotidien) boolean to decide whether to plot the daily values (averaged over 7 days) [TRUE], or the sum over the last 7 days [FALSE]
+  # denom: denominator value; 7 for weekly sums, 1 for daily data
   # scale: "logit" or "linear"
   # addNotes: whether to show warning notes on the plot
   # addDeliss: whether to add data délissées (if available)
@@ -875,7 +1013,6 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
   # addLegend: whether to add legend
   # add: if add to already existing plot
   
-  if(quot){denom <- 7}else{denom <- 1}
   n <- (test1 + test0) / denom
   p <- test0 / (test1 + test0)
   
@@ -1586,6 +1723,28 @@ for(dep in sort(unique.noNA(dat.Deps$departement))){
 }
 ```
 
+## Compare lisse non lisse
+
+```{r}
+layout(1)
+par(mar = c(4, 4, 2, 3))
+region <- "Ile-de-France"
+  tmp <- dat.Regions[which(dat.Regions$nom_reg == region & dat.Regions$dateMid >= startDate & dat.Regions$dateMid <= endDate), ]
+
+  plot(as.Date(tmp$dateDeliss), tmp$nb_C0.dl / (tmp$nb_C0.dl + tmp$nb_C1.dl))
+  points(as.Date(tmp$dateMid), tmp$nb_C0 / (tmp$nb_C0 + tmp$nb_C1), col = 2)
+
+  dep <- "Paris"
+    tmp <- dat.Deps[which(dat.Deps$departement == dep & dat.Deps$dateMid >= startDate & dat.Deps$dateMid <= endDate), ]
+
+  plot(as.Date(tmp$dateDeliss), tmp$nb_D1.dl / (tmp$nb_D0.dl + tmp$nb_D1.dl))
+  points(as.Date(tmp$dateMid), tmp$nb_D1 / (tmp$nb_D0 + tmp$nb_D1), col = 2)  
+  
+  plotMut0(tmp$dateMid, test0 = tmp$nb_D1, test1 = tmp$nb_D0, denom = 7, col = colD, thetit = dep, scale = "linear", ymin = 0, ymax = 1)
+  plotMut0(tmp$dateDeliss, test0 = tmp$nb_D1.dl, test1 = tmp$nb_D0.dl, denom = 1, col = colD, thetit = dep, scale = "linear", ymin = 0, ymax = 1, add = TRUE, pch = 1)
+  
+```
+
 
 ## Variant numbers
 
@@ -1947,6 +2106,9 @@ plotVariantsReg("La Réunion", ymax = ymaxpic)
 Source idea map: [Le Monde map](https://www.lemonde.fr/les-decodeurs/article/2020/05/05/coronavirus-age-mortalite-departements-pays-suivez-l-evolution-de-l-epidemie-en-cartes-et-graphiques_6038751_4355770.html) [| archived](https://archive.is/eJ68m)
 
 ```{r}
+
+minDate <- "2021-05-31" # First date to plot
+
 thrp <- 0.15
 thrntot <- 30
 
@@ -1959,7 +2121,7 @@ drawRec <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thrn
   # thr.p: threshold to plot criblage data, minimum proportion of cases
   # thr.n: threshold in terms of number of tests done
   
-  relTime <- as.numeric(depDat$time)/max(as.numeric(depDat$time))
+  relTime <- as.numeric(depDat$time)/max(as.numeric(depDat$time), na.rm = TRUE)
   test0 <- depDat$nb_C0
   test1 <- depDat$nb_C1
   
@@ -1975,7 +2137,7 @@ drawRec <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thrn
   
   # Computation of the confidence interval
   deltaItv <- 1.96 * sqrt(p * (1-p) / n)
-  keepPts <- !is.na(deltaItv) & (depDat$tx_crib/100 >= thr.p) & (n >= thr.n)
+  keepPts <- !is.na(deltaItv) & (depDat$nb_crib/depDat$nb_pos >= thr.p) & (n >= thr.n)
   
   if(any(keepPts)){
       # Remove points for which the itv cannot be computed
@@ -2024,7 +2186,7 @@ for(i in seq_len(nrow(geog))){
   rect(xleft = round(geog[i, "x"], rr), ybottom = round(geog[i, "y"], rr), xright = round(geog[i, "x"], rr) + ddr[1], ytop = round(geog[i, "y"], rr) + ddr[2], lwd = 0.5, border = gray(0.6))
   
   # Select departement data
-  depDat <- dat.Deps[which(dat.Deps$dep == geog[i, "dep"]), ]
+  depDat <- dat.Deps[which(dat.Deps$dep == geog[i, "dep"] & dat.Deps$dateMid >= minDate), ]
   
   # Horizontal line for 0.5
   lines(c(round(geog[i, "x"], rr), round(geog[i, "x"], rr) + ddr[1]), rep(round(geog[i, "y"], rr) + ddr[2]/2, 2), lty = 1, col = gray(0.6), lwd = 0.5)
@@ -2070,10 +2232,10 @@ Itv confiance sur nb crib. moyen 7 derniers jours.")), cex = cexLegend, bty = "n
 Source idea map: [Le Monde map](https://www.lemonde.fr/les-decodeurs/article/2020/05/05/coronavirus-age-mortalite-departements-pays-suivez-l-evolution-de-l-epidemie-en-cartes-et-graphiques_6038751_4355770.html) [| archived](https://archive.is/eJ68m)
 
 ```{r}
-thrp <- 0.125
+thrp <- 0.10
 thrntot <- 30
 
-drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thrntot/7, colMaj = col452R.complement, scale = "logit", ymin = 1*10^(-2), ymax = 1, yvals = c(0.01, 0.1, 0.5, 0.9, 0.99), ylabels = FALSE){
+drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thrntot/7, colMaj = col452R.complement, scale = "logit", ymin = 1*10^(-2), ymax = 1, yvals = c(0.01, 0.1, 0.5, 0.9, 0.99), ylabels = FALSE, annotate = TRUE, col0 = "nb_C0", col1 = "nb_C1"){
   # depDat: dataset for this departement
   # x: x position of the bottom left corner
   # y: y position of the bottom left corner
@@ -2086,10 +2248,13 @@ drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thr
   # ymax: maximum y value (natural scale)
   # yvals: values of the horizontal lines
   # ylabels: whether to add ylines labels
+  # annotate: bool, whether to add horizontal lines
+  # col0: name of the test0 column
+  # col1: name of the test1 column
   
-  relTime <- (as.numeric(depDat$time) - min(as.numeric(depDat$time)))/(max(as.numeric(depDat$time)) - min(as.numeric(depDat$time)))
-  test0 <- depDat$nb_C0
-  test1 <- depDat$nb_C1
+  relTime <- (as.numeric(depDat$time) - min(as.numeric(depDat$time), na.rm = TRUE))/(max(as.numeric(depDat$time), na.rm = TRUE) - min(as.numeric(depDat$time), na.rm = TRUE))
+  test0 <- depDat[, col0]
+  test1 <- depDat[, col1]
   
   denom <- 7
   n <- (test1 + test0) / denom
@@ -2126,7 +2291,7 @@ drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thr
   
   # Computation of the confidence interval
   deltaItv <- 1.96 * sqrt(p * (1-p) / n)
-  keepPts <- !is.na(deltaItv) & (depDat$tx_crib/100 >= thr.p) & (n >= thr.n)
+  keepPts <- !is.na(deltaItv) & (depDat$nb_crib/depDat$nb_pos >= thr.p) & (n >= thr.n)
   
   if(any(keepPts)){
   #  print("coucou")
@@ -2144,11 +2309,11 @@ drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thr
   # Crop confidence interval values to the plot range
   
   # Color depends on whether main mutation
-  if(pp[length(pp)] > 0.5){
-    thecol <- colMaj
-  }else{
+#  if(pp[length(pp)] > 0.5){
+#    thecol <- colMaj
+#  }else{
     thecol <- col
-  }
+#  }
 
 #print(scale.xy(rT, x, x + dxy[1]))
 #print(pp)
@@ -2166,29 +2331,32 @@ drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thr
          col = adjustcolor(thecol, alpha.f = 0.5), 
          lend = 1)
   
-  # Horizontal lines at specific values
-  nh <- length(yvals)
-  arrows(x0 = scale.xy(rep(0, nh), x, x + dxy[1]), 
-         x1 = scale.xy(rep(1, nh), x, x + dxy[1]), 
-         y0 = scale.xy(chgScale(yvals), y, y + dxy[2], zmin = chgScale(ymin), zmax = chgScale(ymax)), 
-         y1 = scale.xy(chgScale(yvals), y, y + dxy[2], zmin = chgScale(ymin), zmax = chgScale(ymax)), 
-         col = gray(0.8), 
-         lend = 1, 
-         code = 0, 
-         lwd= 0.8
-         )
-  
-  # 0.5 more visually striking
-  if(is.element(0.5, yvals)){
-    arrows(x0 = scale.xy(0, x, x + dxy[1]), 
-         x1 = scale.xy(1, x, x + dxy[1]), 
-         y0 = scale.xy(chgScale(0.5), y, y + dxy[2], zmin = chgScale(ymin), zmax = chgScale(ymax)), 
-         y1 = scale.xy(chgScale(0.5), y, y + dxy[2], zmin = chgScale(ymin), zmax = chgScale(ymax)), 
-         col = gray(0.8), 
-         lend = 1, 
-         code = 0, 
-         lwd= 2
-         )
+  if(annotate){
+    # Horizontal lines at specific values
+    nh <- length(yvals)
+    arrows(x0 = scale.xy(rep(0, nh), x, x + dxy[1]), 
+           x1 = scale.xy(rep(1, nh), x, x + dxy[1]), 
+           y0 = scale.xy(chgScale(yvals), y, y + dxy[2], zmin = chgScale(ymin), zmax = chgScale(ymax)), 
+           y1 = scale.xy(chgScale(yvals), y, y + dxy[2], zmin = chgScale(ymin), zmax = chgScale(ymax)), 
+           col = gray(0.8), 
+           lend = 1, 
+           code = 0, 
+           lwd= 0.8
+    )
+    
+    # 0.5 more visually striking
+    if(is.element(0.5, yvals)){
+      arrows(x0 = scale.xy(0, x, x + dxy[1]), 
+             x1 = scale.xy(1, x, x + dxy[1]), 
+             y0 = scale.xy(chgScale(0.5), y, y + dxy[2], zmin = chgScale(ymin), zmax = chgScale(ymax)), 
+             y1 = scale.xy(chgScale(0.5), y, y + dxy[2], zmin = chgScale(ymin), zmax = chgScale(ymax)), 
+             col = gray(0.8), 
+             lend = 1, 
+             code = 0, 
+             lwd= 2
+      )
+    }
+    
   }
   
   # Add labels
@@ -2231,8 +2399,8 @@ ddr <- round(dd,rr)
 
 initDate <- "2021-12-01"
 ymin <- 1*10^(-2)
-ymax <- 0.9
-yvals <- c(0.01, 0.1, 0.5, 0.9)
+ymax <- 0.99
+yvals <- c(0.01, 0.1, 0.5, 0.9, 0.99)
 
 par(mar = rep(0.2, 4) + c(2, 0, 2, 0))
 # Initialize plot with rect positions
@@ -2246,7 +2414,7 @@ for(i in seq_len(nrow(geog))){
   rect(xleft = round(geog[i, "x"], rr), ybottom = round(geog[i, "y"], rr), xright = round(geog[i, "x"], rr) + ddr[1], ytop = round(geog[i, "y"], rr) + ddr[2], lwd = 0.5, border = gray(0.6))
   
   # Select departement data
-  depDat <- dat.Deps[which(dat.Deps$dep == geog[i, "dep"] & dat.Deps$date2 >= initDate), ]
+  depDat <- dat.Deps[which(dat.Deps$dep == geog[i, "dep"] & dat.Deps$dateMid >= initDate), ]
   
   # Horizontal line for 0.5
  #  lines(c(round(geog[i, "x"], rr), round(geog[i, "x"], rr) + ddr[1]), rep(round(geog[i, "y"], rr) + ddr[2]/2, 2), lty = 1, col = gray(0.6), lwd = 0.5)
@@ -2257,10 +2425,18 @@ for(i in seq_len(nrow(geog))){
   }else{
     ylb <- FALSE
   }
+  
   drawRec0(depDat, x = round(geog[i, "x"], rr), y = round(geog[i, "y"], rr), dxy = ddr, col = col452R, 
            ymin = ymin, ymax = ymax, 
            ylabels = ylb, 
            yvals = yvals)
+
+  # Add D
+    drawRec0(depDat, x = round(geog[i, "x"], rr), y = round(geog[i, "y"], rr), dxy = ddr, col = colD, 
+           ymin = ymin, ymax = ymax, 
+           ylabels = ylb, 
+           yvals = yvals, 
+           col0 = "nb_D1", col1 = "nb_D0")
 
 #    readline(prompt="Press [enter] to continue")
 
@@ -2270,7 +2446,7 @@ for(i in seq_len(nrow(geog))){
 #drawRec(depDat, x = 5.73820184045573, y = 7.01837788404748, dxy = ddr, col = col452R)
 
 minDay <- format(as.Date(initDate), "%d %b")
-maxDay <- format(max(dat.Deps$dateMid), "%d %b")
+maxDay <- format(max(dat.Deps$dateMid) - 3, "%d %b") # -3 because we have added case data
 
 
 # xP <- 1.34031283936975
@@ -2315,7 +2491,7 @@ drawRec2 <- function(depDat, x, y, dxy, col = col484K, thr.p = thrp, thr.n = thr
   # thr.p: threshold to plot criblage data, minimum proportion of cases
   # thr.n: threshold in terms of number of tests done
   
-  relTime <- as.numeric(depDat$time)/max(as.numeric(depDat$time))
+  relTime <- (as.numeric(depDat$time) - min(as.numeric(depDat$time), na.rm = TRUE))/(max(as.numeric(depDat$time), na.rm = TRUE) - min(as.numeric(depDat$time), na.rm = TRUE))
   test0 <- depDat$nb_A0 + depDat$nb_B0
   test1 <- depDat$nb_A1 + depDat$nb_B1
   
@@ -2372,7 +2548,7 @@ for(i in seq_len(nrow(geog))){
   rect(xleft = round(geog[i, "x"], rr), ybottom = round(geog[i, "y"], rr), xright = round(geog[i, "x"], rr) + ddr[1], ytop = round(geog[i, "y"], rr) + ddr[2], lwd = 0.5, border = gray(0.6))
   
   # Select departement data
-  depDat <- dat.Deps[which(dat.Deps$dep == geog[i, "dep"]), ]
+  depDat <- dat.Deps[which(dat.Deps$dep == geog[i, "dep"] & dat.Deps$dateMid >= initDate), ]
   
   # Horizontal line for 0.5
   lines(c(round(geog[i, "x"], rr), round(geog[i, "x"], rr) + ddr[1]), rep(round(geog[i, "y"], rr) + ddr[2]/2, 2), lty = 1, col = gray(0.6), lwd = 0.5)
