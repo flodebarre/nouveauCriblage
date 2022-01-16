@@ -50,7 +50,6 @@ colMut <- brewer.pal(n = 8, name = "Dark2")
 library("MetBrewer")
 
 colMut <- met.brewer("Redon", n = 7, type = "discrete")
-colMut
 
 #met.brewer("Signac", n = 7, type = "discrete")
 
