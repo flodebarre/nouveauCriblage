@@ -11,7 +11,7 @@ editor_options:
   chunk_output_type: console
 ---
 
-Warning: The structure of the public datasets has changed, and I am updating this code. Currently, it does not compile if you try to knit it, you need to evaluate it bit by bit (I stopped after "Specific examples"). 
+
 
 ```{r, eval=FALSE}
 rm(list = ls()) # I don't care what you think
@@ -29,7 +29,7 @@ Source of the data:
 
 # Initializations
 
-```{r}
+```{r loadClearMergeData}
 # Whether to recompute the combined datasets and delissage
 cleanMergeData <- FALSE
 
@@ -50,6 +50,10 @@ colMut <- brewer.pal(n = 8, name = "Dark2")
 library("MetBrewer")
 
 colMut <- met.brewer("Redon", n = 7, type = "discrete")
+colMut
+
+#met.brewer("Signac", n = 7, type = "discrete")
+
 # Colorblind Choices are: Austria, Cassatt1, Cassatt2, Cross, Degas, Derain, Egypt, Gauguin, Greek, Hiroshige, Hokusai1, Hokusai2, Hokusai3, Homer1, Homer2, Ingres, Isfahan1, Isfahan2, Juarez, Klimt, Lakota, Manet, Monet, Moreau, Morgenstern, Nattier, Navajo, NewKingdom, Nizami, OKeeffe1, OKeeffe2, Peru1, Peru2, Pillement, Pissaro, Redon, Renoir, Robert, Signac, Stevens, Tara, Thomas, Tiepolo, Troy, Tsimshian, VanGogh1, VanGogh2, VanGogh3, Veronese, and Wissing
 
 colGrad <- met.brewer("Hiroshige", n = 7, type = "continuous")
@@ -582,7 +586,7 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
 
   if(addNotes){
   # Add note about data and code provenance
-  mtext("Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
+  mtext("Data : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
 Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/mutations.Rmd", side = 1, line = 3.5, cex = 0.5, col = gray(0.5), adj = 0, family = "mono")
     
     par(xpd = TRUE)
@@ -615,7 +619,7 @@ Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/mutations
     }
     
     if(scale == "linear"){
-      mtext("Proportion criblage sans mutation L452R", side = 2, las = 0, line = 2.5)
+      mtext("p", side = 2, las = 0, line = 2.5)
     }
     if(scale == "logit"){
       mtext(expression(paste("p"[0], ", logit scale")), side = 2, las = 0, line = 2.5)
@@ -1161,16 +1165,43 @@ for(dep in sort(unique.noNA(dat.Deps$departement))){
 
 ## Compare lisse non lisse
 
-```{r}
+### IDF 
+
+```{r compareLissDelissIDF}
 layout(1)
 par(mar = c(4, 4, 2, 3))
 region <- "Ile-de-France"
   tmp <- dat.Regions[which(dat.Regions$nom_reg == region & dat.Regions$dateMid >= startDate & dat.Regions$dateMid <= endDate), ]
+  
+pchDelissD <- 0
+pchDelissC <- 1
 
-  plot(as.Date(tmp$dateDeliss), tmp$nb_C0.dl / (tmp$nb_C0.dl + tmp$nb_C1.dl))
-  points(as.Date(tmp$dateMid), tmp$nb_C0 / (tmp$nb_C0 + tmp$nb_C1), col = 2)
+  plotMut0(tmp$dateDeliss, test0 = tmp$nb_D1.dl, test1 = tmp$nb_D0.dl, denom = 1, col = colD, thetit = paste0(region, ""), scale = "linear", ymin = 0, ymax = 1, pch = pchDelissD)
+  
+  plotMut0(tmp$dateMid, test0 = tmp$nb_D1, test1 = tmp$nb_D0, denom = 7, col = colD, thetit = region, scale = "linear", ymin = 0, ymax = 1, add = TRUE, pch = 15)
 
-  dep <- "Paris"
+    plotMut0(tmp$dateMid, test0 = tmp$nb_C0, test1 = tmp$nb_C1, denom = 7, col = col452R, thetit = region, scale = "linear", ymin = 0, ymax = 1, add = TRUE)
+
+        plotMut0(tmp$dateDeliss, test0 = tmp$nb_C0.dl, test1 = tmp$nb_C1.dl, denom = 7, col = col452R, thetit = region, scale = "linear", ymin = 0, ymax = 1, add = TRUE, pch = pchDelissC)
+#  plot(as.Date(tmp$dateDeliss), tmp$nb_C0.dl / (tmp$nb_C0.dl + tmp$nb_C1.dl))
+#  points(as.Date(tmp$dateMid), tmp$nb_C0 / (tmp$nb_C0 + tmp$nb_C1), col = 2)
+  
+  
+  legend("topleft", col = c(rep(col452R, 2), rep(colD, 2)), pch = c(16, pchDelissC, 15, pchDelissD), 
+         legend = c("C0, 7-day average", 
+                    "C0, daily data", 
+                    "D1, 7-day average", 
+                    "D1, daily data"), 
+         box.lwd = -1, y.intersp = 1)
+#presence of K417N or del69/70 \n       or S371L-S373P or Q493R
+  
+  mtext(side = 3, line = 0.25, "C0: absence of L452R; D1: presence of K417N or del69/70 or S371L-S373P or Q493R", adj = 0.5, cex = 0.9)
+```
+
+### Deps IDF
+
+```{r}
+dep <- "Paris"
     tmp <- dat.Deps[which(dat.Deps$departement == dep & dat.Deps$dateMid >= startDate & dat.Deps$dateMid <= endDate), ]
 
   plot(as.Date(tmp$dateDeliss), tmp$nb_D1.dl / (tmp$nb_D0.dl + tmp$nb_D1.dl))
