@@ -1749,7 +1749,7 @@ drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thr
 #      print("coucou1")
     }
     if(scale == "linear"){
-      out <- p # Linear scale, no change
+      out <- Z # Linear scale, no change
     }
     out
   }
@@ -1760,7 +1760,7 @@ drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thr
   keepPts <- !is.na(deltaItv) & (depDat$nb_crib/depDat$nb_pos >= thr.p) & (n >= thr.n)
   
   if(any(keepPts)){
-  #  print("coucou")
+  #print("coucou")
       
   # Remove points for which the itv cannot be computed
   # and point with not enough criblage
@@ -1773,7 +1773,7 @@ drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thr
   itvM <- pp + deltaItv
   
   # Crop confidence interval values to the plot range
-  
+  #print("coucou1")
   # Color depends on whether main mutation
 #  if(pp[length(pp)] > 0.5){
 #    thecol <- colMaj
@@ -1796,7 +1796,7 @@ drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thr
          lwd = 1, 
          col = adjustcolor(thecol, alpha.f = 0.5), 
          lend = 1)
-  
+  #print("coucou2")
   if(annotate){
     # Horizontal lines at specific values
     nh <- length(yvals)
@@ -1809,7 +1809,7 @@ drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thr
            code = 0, 
            lwd= 0.8
     )
-    
+    #print("coucou3")
     # 0.5 more visually striking
     if(is.element(0.5, yvals)){
       arrows(x0 = scale.xy(0, x, x + dxy[1]), 
@@ -1824,7 +1824,7 @@ drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thr
     }
     
   }
-  
+  #print("coucou4")
   # Add labels
   if(ylabels){
     dxx <- 0.1
@@ -1834,22 +1834,24 @@ drawRec0 <- function(depDat, x, y, dxy, col = col452R, thr.p = thrp, thr.n = thr
          adj = c(0, 0.5), 
          cex = 0.45)
   }
+  #print("coucou5")
   
-  
-#  print(pp)
-#  print(chgScale(pp))
-#  print(chgScale(ymin))
-#  print(chgScale(ymax))
+ # print(pp)
+ # print(chgScale(pp))
+ # print(ymin)
+ # print(chgScale(ymin))
+ # print(ymax)
+ # print(chgScale(ymax))
 
     points(scale.xy(rT, x, x + dxy[1]), 
          scale.xy(yv = chgScale(pp), y, y + dxy[2], zmin = chgScale(ymin), zmax = chgScale(ymax)), 
          type = "p", col = thecol, pch = 16, cex = 0.2, lwd = 0.7)
-  
+  #print("coucou6")
   }
 }
 
 # This is only here for testing new stuff quickly
-#drawRec0(depDat, x = round(geog[i, "x"], rr), y = round(geog[i, "y"], rr), dxy = ddr, col = col452R)
+#drawRec0(depDat, x = round(geog[i, "x"], rr), y = round(geog[i, "y"], rr), dxy = ddr, col = col452R, scale = "linear")
 
 ```
 
@@ -1898,11 +1900,11 @@ for(i in seq_len(nrow(geog))){
            yvals = yvals)
 
   # Add D
-    drawRec0(depDat, x = round(geog[i, "x"], rr), y = round(geog[i, "y"], rr), dxy = ddr, col = colD, 
-           ymin = ymin, ymax = ymax, 
-           ylabels = ylb, 
-           yvals = yvals, 
-           col0 = "nb_D1", col1 = "nb_D0")
+    # drawRec0(depDat, x = round(geog[i, "x"], rr), y = round(geog[i, "y"], rr), dxy = ddr, col = colD, 
+    #        ymin = ymin, ymax = ymax, 
+    #        ylabels = ylb, 
+    #        yvals = yvals, 
+    #        col0 = "nb_D1", col1 = "nb_D0")
 
 #    readline(prompt="Press [enter] to continue")
 
@@ -1938,7 +1940,88 @@ Itv confiance sur nb crib. moyen 7 derniers jours.
 
 Attention : 
 - les données publiques sont lissées, ce qui atténue le signal
-- il y a de moins en moins de criblage dans les données publiques")), cex = cexLegend, bty = "n", adj = c(0, 0))
+#- il y a de moins en moins de criblage dans les données publiques
+")), cex = cexLegend, bty = "n", adj = c(0, 0))
+```
+
+
+```{r figMapDepAbsL452R.Linear, fig.width = 7, fig.height = 9}
+initDate <- "2021-12-01"
+ymin <- 0
+ymax <- 1
+yvals <- c(0, 0.25, 0.5, 0.75, 1)
+
+par(mar = rep(0.2, 4) + c(2, 0, 2, 0))
+# Initialize plot with rect positions
+plot(c(round(geog$x, rr), round(geog$x, rr) + ddr[1]), c(round(geog$y, rr), round(geog$y, rr) + ddr[2]), type = "n", asp = 1, axes = FALSE, xlab = "", ylab = "")
+
+# Add titles of the plots
+text(x = round(geog$x, rr) + ddr[1]/2, y = round(geog$y, rr) + ddr[2], labels = paste0(geog$shortName, "(", geog$dep, ")"), bg = "white", adj = c(0.5, -0.4), cex = 0.45)
+
+for(i in seq_len(nrow(geog))){
+  # Draw rectangle
+  rect(xleft = round(geog[i, "x"], rr), ybottom = round(geog[i, "y"], rr), xright = round(geog[i, "x"], rr) + ddr[1], ytop = round(geog[i, "y"], rr) + ddr[2], lwd = 0.5, border = gray(0.6))
+  
+  # Select departement data
+  depDat <- dat.Deps[which(dat.Deps$dep == geog[i, "dep"] & dat.Deps$dateMid >= initDate), ]
+  
+  # Horizontal line for 0.5
+ #  lines(c(round(geog[i, "x"], rr), round(geog[i, "x"], rr) + ddr[1]), rep(round(geog[i, "y"], rr) + ddr[2]/2, 2), lty = 1, col = gray(0.6), lwd = 0.5)
+  
+  # Draw curve
+  if(geog[i, "dep"] == "75"){
+    ylb <- TRUE
+  }else{
+    ylb <- FALSE
+  }
+  
+  drawRec0(depDat, x = round(geog[i, "x"], rr), y = round(geog[i, "y"], rr), dxy = ddr, col = col452R, 
+           ymin = ymin, ymax = ymax, 
+           ylabels = ylb, 
+           yvals = yvals, scale = "linear")
+
+  # Add D
+    # drawRec0(depDat, x = round(geog[i, "x"], rr), y = round(geog[i, "y"], rr), dxy = ddr, col = colD, 
+    #        ymin = ymin, ymax = ymax, 
+    #        ylabels = ylb, 
+    #        yvals = yvals, 
+    #        col0 = "nb_D1", col1 = "nb_D0", scale = "linear")
+
+#    readline(prompt="Press [enter] to continue")
+
+}
+
+
+#drawRec(depDat, x = 5.73820184045573, y = 7.01837788404748, dxy = ddr, col = col452R)
+
+minDay <- format(as.Date(initDate), "%d %b")
+maxDay <- format(max(dat.Deps$dateMid) - 3, "%d %b") # -3 because we have added case data
+
+
+# xP <- 1.34031283936975
+# yP <- 15.0106959818622
+# cexLeg <- 0.45
+# text(x = xP, y = yP, adj = c(1, 0), labels = ymin, cex = 0.4)
+# text(x = xP, y = yP + ddr[2], adj = c(1, 0.5), labels = ymax, cex = cexLeg)
+
+text(x = c(xP, xP + ddr[1]), y = c(yP, yP), adj = c(0.5, 1.5), labels = c(minDay, maxDay), cex = cexLeg)
+
+title("Absence de L452R (C0)")
+
+  mtext(paste0("  @flodebarre, mise à jour ", Sys.Date(), "
+  Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
+  Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/mutations.Rmd
+  Idée carte : Les Decodeurs, Le Monde https://tinyurl.com/carteFRDecLM"), side = 1, line = 1, cex = 0.525, col = gray(0.5), adj = 0, family = "mono")
+  
+cexLegend <- 0.55
+#legend("topright", legend = c("Proportion L452R, < 50% le dernier jour", "≥ 50% le dernier jour"), cex = cexLegend, bty = "n", col = c(col452R, col452R.complement), lty = 1, pch = 16)
+legend("topright", legend = c(paste0("Données tracées si au moins ", 100*thrp, "% des cas criblés
+et au moins ", thrntot, " criblages sur la semaine. 
+Itv confiance sur nb crib. moyen 7 derniers jours.
+
+Attention : 
+- les données publiques sont déjà lissées
+")), cex = cexLegend, bty = "n", adj = c(0, 0))
 ```
 
 ### E484K/Q
