@@ -1,0 +1,235 @@
+---
+title: "TrevorPlots"
+author: "FD"
+output: 
+  html_document: 
+      code_folding: hide
+      toc: TRUE
+      toc_float: TRUE
+      self_contained: no
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Initializations
+
+```{r}
+# Whether to recompute the combined datasets and delissage
+cleanMergeData <- FALSE
+
+# Whether to download the data
+# (if cleanMergeData == TRUE only)
+dlData <- TRUE
+```
+
+```{r}
+library("MetBrewer")
+nGrad <- 101
+colGrad <- rev(met.brewer("Hiroshige", n = nGrad, type = "continuous"))
+vGrad <- seq(0, 1, length.out = nGrad)
+```
+
+```{r, results='hide'}
+source("usefulFunctions.R")
+```
+
+# Load data
+
+```{r}
+if(cleanMergeData){
+  # Compute datasets
+  source("load-clean-merge-data.R")
+}
+
+# Load datasets
+dat.France <- read.csv("../data/datCribTest_France.csv")
+dat.Regions <- read.csv("../data/datCribTest_Regions.csv")
+dat.Deps <- read.csv("../data/datCribTest_Deps.csv")
+
+
+# Turn dates back into dates
+dat.France$date2 <- as.Date(dat.France$date2)
+dat.France$dateMid <- as.Date(dat.France$dateMid)
+dat.France$dateDeliss <- as.Date(dat.France$dateDeliss)
+
+dat.Regions$date2 <- as.Date(dat.Regions$date2)
+dat.Regions$dateMid <- as.Date(dat.Regions$dateMid)
+dat.Regions$dateDeliss <- as.Date(dat.Regions$dateDeliss)
+
+dat.Deps$date2 <- as.Date(dat.Deps$date2)
+dat.Deps$dateMid <- as.Date(dat.Deps$dateMid)
+dat.Deps$dateDeliss <- as.Date(dat.Deps$dateDeliss)
+
+```
+
+Load and assign jours feries
+Source: <https://www.data.gouv.fr/en/datasets/jours-feries-en-france/>
+
+```{r}
+feries <- read.csv("../../covid_indicateurs/data/jours_feries_metropole.csv")
+
+dat.France$ferie <- is.element(dat.France$dateMid, as.Date(feries$date))
+
+dat.Regions$ferie <- is.element(dat.Regions$dateMid, as.Date(feries$date))
+
+dat.Deps$ferie <- is.element(dat.Deps$dateMid, as.Date(feries$date))
+
+
+dat.France$jour <- dat.France$dateMid
+dat.Regions$jour <- dat.Regions$dateMid
+dat.Deps$jour <- dat.Deps$dateMid
+```
+
+
+# TrevorPlot
+
+
+```{r}
+computeRatios <- function(dat){
+  # dat: dataset
+  
+  subdat <- dat
+  
+  # Check that we have data for consecutive dates
+  stopifnot(all(diff(as.Date(subdat$jour)) == 1))
+  # When it's OK we can just go on
+  
+  # Index of the final line
+  nend <- nrow(subdat)
+  
+  subdat$ratios7 <- NA # Initialize column
+  
+  # Ratios
+  subdat[8:nend, "ratios7"] <- subdat[8:nend, "P"] / subdat[1:(nend - 7), "P"]
+  # Logs (not needed because we will plot on a log scale)
+  subdat$logratios7 <- log(subdat$ratios7)
+  
+  # Sliding average
+  subdat$ratios7.slidingave <- sliding.window(subdat$ratios7)
+  
+  # Number of tests
+  subdat[8:nend, "Tratios7"] <- subdat[8:nend, "T"] / subdat[1:(nend - 7), "T"]
+  # Sliding average
+  subdat$Tratios7.slidingave <- sliding.window(subdat$Tratios7)
+  
+  subdat # Return result
+}
+
+```
+
+
+```{r trevorPlotReg, fig.width=8, fig.height=6}
+codesregs <- as.numeric(sort(unique(dat.Regions$reg)))
+codesregs <- codesregs[which(codesregs >= 10)]
+
+startDate <- "2021-11-15"
+
+maxRat <- 4
+
+par(las = 1)
+layout(matrix(c(1, 1, 2, 3), ncol = 2), widths = c(9, 1), heights = c(2, 1))
+
+par(mar = c(6, 4, 3, 0))
+par(mgp = c(2., 0.5, 0), tck = -0.01)
+plot(1, type = "n", xlim = c(10, max(dat.Regions$P / dat.Regions$pop * 100000, na.rm = TRUE)), ylim = c(0.5, maxRat), 
+     log = "xy", 
+     xlab = "Cases per 100'000 inhabitants (7-d averaged)",
+     ylab = "7-day case ratio (7-d averaged)", 
+     frame.plot = FALSE)
+
+par(xpd = FALSE)
+abline(h = 1, col = gray(0.5))
+
+mtext(side = 1, text = paste0("@flodebarre, ", max(dat.France$date2, na.rm = TRUE) + 3, ", inspired by @trvrb, @BristOliver, @VictimOfMaths
+Data: https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/, and 
+https://www.data.gouv.fr/fr/datasets/donnees-relatives-aux-resultats-des-tests-virologiques-covid-19/
+Code: https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/trevorplots.Rmd
+"), adj = 0, cex = 0.5, family = "mono", line = 5.5, col = gray(0.4))
+
+
+for(codereg in codesregs){
+  tmp <- dat.Regions[which(dat.Regions$reg == codereg & dat.Regions$dateMid >= as.Date(startDate) - 7), ]
+  
+  # Remove jours feries to avoid issues
+  tmp[tmp$ferie, c("P", "T")] <- NA
+  
+  tmp2 <- computeRatios(tmp)
+  ii <- !is.na(tmp2$ratios7)
+  
+  x <- sliding.window(tmp2$P / tmp2$pop * 10^5)
+  y <- sliding.window(tmp2$ratios7)
+
+  #lines(x[ii], y[ii], type = "l", col = cols)
+  
+  # Colors
+  cols <-  colGrad[sapply(tmp2$nb_C0/(tmp2$nb_C0 + tmp2$nb_C1), function(i) sum(i >= vGrad))]
+  
+  # Non-NA values
+  ipos <- which(!is.na(x) & !is.na(y) & !is.na(cols))
+  xx <- x[ipos]
+  yy <- y[ipos]
+  cc <- cols[ipos]
+  
+  for(i in 2:length(xx)){
+    lines(xx[c(i-1, i)], yy[c(i-1, i)], col = cc[i-1], lwd = 1.5)
+  }
+  
+  #points(x[ii], y[ii], type = "p", col = cols, pch = 16)
+  
+  # Last point bigger
+  iend <- ipos[length(ipos)]
+  
+  points(x[iend], y[iend], type = "p", col = cols[iend], pch = 16, cex = 1.5)
+
+  print(codereg)
+#readline(prompt = "Press <Enter> to continue...")
+}
+
+mtext(side = 3, 
+      text = paste0("Mainland France by regions, \n", startDate, " -- ", max(tmp$dateMid, na.rm = TRUE)))
+
+par(mar = c(4, 0, 3, 0))
+plot(rep(0, nGrad), vGrad, col = colGrad, pch = 15, axes = FALSE, xlab = "", ylab = "")
+xl <- seq(0, 1, by = 0.1)
+text(rep(0.2, length(xl)), xl, labels = xl, adj = c(0, 0.5))
+par(xpd = TRUE)
+text(0, 1, labels = "Proportion
+Omicron
+", adj = c(0.5, 0))
+
+```
+
+
+```{r}
+names(dat.Regions)
+unique(dat.Regions$reg_name)
+
+tmp <- dat.Regions[which(dat.Regions$reg_name == "Île-de-France" & dat.Regions$dateMid >= as.Date(startDate) - 7), ]
+
+# Remove jours feries to avoid issues
+tmp[tmp$ferie, c("P", "T")] <- NA
+
+plot(tmp$dateMid, sliding.window(tmp$P))
+
+plot(tmp$dateMid, tmp$P/tmp$T)
+
+head(tmp)
+tmp2 <- computeRatios(tmp)
+tmp2
+ii <- !is.na(tmp2$ratios7)
+plot(sliding.window(tmp2$P / tmp2$pop)[ii], tmp2$ratios7[ii], type = "p", log = "xy", col = colGrad[sapply(tmp2$nb_C0/(tmp2$nb_C0 + tmp2$nb_C1), function(i) sum(i > vGrad))], pch = 16)
+
+lines(sliding.window(tmp2$P / tmp2$pop)[ii], tmp2$ratios7[ii], type = "l")
+
+#plot(tmp2$dateMid, tmp2$ratios7, log = "y")
+
+data.frame(as.Date(tmp2$dateMid), tmp2$P, tmp2$ratios7)
+
+#plot(rep(1, nGrad), col = colGrad, pch=15)
+
+```
+
