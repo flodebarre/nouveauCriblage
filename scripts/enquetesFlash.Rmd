@@ -155,3 +155,30 @@ legend("center",
        pch = 15, pt.cex = 1.5, cex = 1, box.lwd = 0, title = "Variants")
 
 ```
+
+Version 2, with empty bars
+
+```{r barplotSPFv2, fig.width=10, fig.height=6}
+layout(matrix(1:2, ncol = 2), widths = c(5, 1.15))
+par(mar = c(3, 2, 2, 0), 
+    mgp = c(2, 0.5, 0), tck = -0.0075)
+bp <- barplot(p ~ variantNames2 + week, data = datFlash, col = cols2, 
+              axes = FALSE, names.arg = rep("", length(unique(datFlash$week))), 
+              xlab = "", ylab = "")
+
+par(xpd = TRUE)
+ii <- seq(1, length(bp), by = 2)
+text(bp[ii], 0*bp[ii], paste(alldates[ii], " "), srt = 60, adj = c(1, 0.5), cex = 0.6)
+par(xpd = FALSE)
+
+title("Proportion des variants dans les enquêtes Flash")
+
+axis(2, las = 1, pos = min(bp) - 1.2*(bp[2] - bp[1]), lwd = 0, lwd.ticks = 1)
+par(mar = rep(0, 4))
+plot(0, type = "n", axes = FALSE, xlab = "", ylab = "")
+legend("center", 
+       col = rev(cols2), 
+       legend = rev(dic.variants[names(cols2)]), 
+       pch = 15, pt.cex = 1.5, cex = 1, box.lwd = 0, title = "Variants")
+
+```
