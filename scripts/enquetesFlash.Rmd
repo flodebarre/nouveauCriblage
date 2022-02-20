@@ -1,0 +1,157 @@
+---
+title: "Enquetes Flash"
+author: "FD"
+output: 
+  html_document: 
+      code_folding: hide
+      toc: TRUE
+      toc_float: TRUE
+      self_contained: no
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Initializations
+
+```{r}
+dlData <- FALSE
+```
+
+## Colors
+
+```{r}
+# Colors SPF - from the weekly epidemiological reports
+# e.g., https://t.co/eFu2Jdt3j1
+colAlpha <- "#de2f1e"
+colBeta <- "#ff7340"
+colGamma <- "#f6b756"
+colDelta <- "#fdde8b"
+colOmicron <- "#c7eae4"
+colOther <- gray(0.9)
+colB1640 <- "#73aed6"
+```
+
+
+# Load and clean data
+
+Source of the data: <https://www.data.gouv.fr/fr/datasets/variants-circulants-indicateurs-issus-du-sequencage-emergen/>
+
+```{r}
+# Download the data
+URL <- "https://www.data.gouv.fr/fr/datasets/r/61aece05-1df1-4cdf-8755-f27913653e94"
+fileName <- "../data/flash.csv"
+if(dlData){
+  download.file(URL, fileName)
+  # Save updated file
+  system(paste0("git add ", fileName))
+  system(paste0("git commit -m 'update Flash data' ", fileName))
+}
+
+# Load the data
+datFlash <- read.csv(fileName, sep = ";")
+
+datFlash$deb_periode <- as.Date(datFlash$deb_periode)
+```
+
+## Dates 
+
+```{r}
+# Fill in the missing dates
+dates <- sort(unique(datFlash$deb_periode))
+dates
+
+alldates <- seq(dates[1], as.Date(max(dates)), by = "week")
+
+all(is.element(dates, alldates))
+# does not work because dates not always same day of week
+allweeks <- format(as.Date(alldates), "%Y-W%W")
+weeks <- format(as.Date(dates), "%Y-W%W")
+all(is.element(weeks, allweeks))
+
+datFlash$week <- format(as.Date(datFlash$deb_periode), "%Y-W%W")
+
+# Identify the missing weeks
+missingWeeks <- allweeks[which(!is.element(allweeks, weeks))]
+
+missingTable <- expand.grid(week = missingWeeks, flash_variants = sort(unique(datFlash$flash_variants)), n = 0, n_tot = 1, fra = "FR", stringsAsFactors = FALSE)
+
+missingTable$deb_periode <- as.Date(paste(substr(missingTable$week, 1, 4), substr(missingTable$week, 7, 8), 1, sep="-"), "%Y-%U-%u")
+
+# Check that names are OK
+all(sort(names(missingTable)) == sort(names(datFlash)))
+
+# Add the data to the dataset
+datFlash <- rbind(datFlash, missingTable[, names(datFlash)])
+
+datFlash$p <- datFlash$n / datFlash$n_tot
+```
+
+
+
+## Variants
+
+> Les variants sont codifiés de la façon suivante dans les fichiers :
+> 1 = Alpha
+> 2 = B.1.640
+> 3 = Beta
+> 4 = Delta
+> 5 = Gamma
+> 6 = Omicron
+> 7 = Autres variants
+
+```{r}
+dic.variants <- c("Alpha", "B.1.640", "Beta", "Delta", "Gamma", "Omicron", "Autres variants")
+names(dic.variants) <- as.character(1:7)
+dic.variants
+
+# Rename variants for them to be properly ordered in the plot
+# (newer ones at the bottom)
+dic.variants.rename <- c("6_Alpha", "2_B.1.640", "5_Beta", "3_Delta", "4_Gamma", "1_Omicron", "7_Autres")
+names(dic.variants.rename) <- names(dic.variants)
+dic.variants.rename
+
+# Colors
+cols <- c(colAlpha, colB1640, colBeta, colDelta, colGamma, colOmicron, colOther)
+names(cols) <- names(dic.variants)
+
+cols2 <- c(colOmicron, colB1640, colDelta, colGamma, colBeta, colAlpha, colOther)
+names(cols2) <- as.character(c(6, 2, 4, 5, 3, 1, 7))
+
+# Check names
+rbind(dic.variants, dic.variants.rename, cols)
+
+# Add names to the dataset
+datFlash$variantNames <- dic.variants[datFlash$flash_variants]
+datFlash$variantNames2 <- dic.variants.rename[datFlash$flash_variants]
+```
+
+# Plot
+
+```{r barplotSPF, fig.width=10, fig.height=6}
+layout(matrix(1:2, ncol = 2), widths = c(5, 1.15))
+par(mar = c(3, 2, 2, 0), 
+    mgp = c(2, 0.5, 0), tck = -0.0075)
+bp <- barplot(p ~ variantNames2 + week, data = datFlash, col = cols2, width = c(rep(c(2, 0), length(missingWeeks)), rep(1, 100)), 
+              axes = FALSE, names.arg = rep("", length(unique(datFlash$week))), 
+              xlab = "", ylab = "")
+
+par(xpd = TRUE)
+ii <- seq(1, length(bp), by = 2)
+text(bp[ii], 0*bp[ii], paste(alldates[ii], " "), srt = 60, adj = c(1, 0.5), cex = 0.6)
+par(xpd = FALSE)
+
+title("Proportion des variants dans les enquêtes Flash")
+
+axis(2, las = 1, pos = min(bp) - 1.2*(bp[2] - bp[1]), lwd = 0, lwd.ticks = 1)
+par(mar = rep(0, 4))
+plot(0, type = "n", axes = FALSE, xlab = "", ylab = "")
+legend("center", 
+       col = rev(cols2), 
+       legend = rev(dic.variants[names(cols2)]), 
+       pch = 15, pt.cex = 1.5, cex = 1, box.lwd = 0, title = "Variants")
+
+```
