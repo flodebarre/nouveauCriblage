@@ -1,0 +1,324 @@
+---
+title: "R Notebook"
+output: 
+  html_notebook:
+    self_contained: no
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r, eval=FALSE}
+rm(list = ls()) # I don't care what you think
+for(i in dev.list()) dev.off()
+setwd("scripts/")
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Source of the data:  
+<https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/>
+
+# Initializations
+
+```{r loadClearMergeData}
+# Whether to recompute the combined datasets and delissage
+cleanMergeData <- FALSE
+
+# Whether to download the data
+# (if cleanMergeData == TRUE only)
+dlData <- FALSE
+
+```
+
+# Load data 
+
+```{r, results = 'hide'}
+if(cleanMergeData){
+  # Compute datasets
+  source("load-clean-merge-data.R")
+}
+
+# Load datasets
+dat.France <- read.csv("../data/datCribTest_France.csv")
+dat.Regions <- read.csv("../data/datCribTest_Regions.csv")
+dat.Deps <- read.csv("../data/datCribTest_Deps.csv")
+
+
+# Turn dates back into dates
+dat.France$date2 <- as.Date(dat.France$date2)
+dat.France$dateMid <- as.Date(dat.France$dateMid)
+dat.France$dateDeliss <- as.Date(dat.France$dateDeliss)
+
+dat.Regions$date2 <- as.Date(dat.Regions$date2)
+dat.Regions$dateMid <- as.Date(dat.Regions$dateMid)
+dat.Regions$dateDeliss <- as.Date(dat.Regions$dateDeliss)
+
+dat.Deps$date2 <- as.Date(dat.Deps$date2)
+dat.Deps$dateMid <- as.Date(dat.Deps$dateMid)
+dat.Deps$dateDeliss <- as.Date(dat.Deps$dateDeliss)
+```
+
+# Plots
+
+```{r}
+plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 10^-6, denom = 7, scale = "logit", add = FALSE, addNotes = TRUE, pch = 16){
+  # -- here showing n0/(n0+n1) --
+  # time: vector of values of times of sample collection
+  # test0: vector of numbers of tests with value 0
+  # test1: vector of numbers of tests with value 1
+  # col: color used for the plot
+  # thetit: title of the plot
+  # ymin: min y value
+  # ymax: max y value
+  # denom: denominator value; 7 for weekly sums, 1 for daily data
+  # scale: "logit" or "linear"
+  # addNotes: whether to show warning notes on the plot
+  # addDeliss: whether to add data délissées (if available)
+  # timedl: time values of the délissées data
+  # test0dl: C0 values délissées
+  # test1dl: C1 values délissées
+  # coldl: color for the délissées data
+  # addLegend: whether to add legend
+  # add: if add to already existing plot
+  
+  n <- (test1 + test0) / denom
+  p <- test0 / (test1 + test0)
+  
+  # Computation of the confidence interval
+  deltaItv <- 1.96 * sqrt(p * (1-p) / n)
+  keepPts <- !is.na(deltaItv) 
+  # Remove points for which the interval cannot be computed
+  deltaItv <- deltaItv[keepPts]
+  pp <- p[keepPts]
+  
+  dxx <- 0 # Number of days to be added (depends on whether data délissées are used)
+  
+  cexL <- 1 # Point size of lissées data
+
+  # Compute new values on the new scale
+  changeScale <- function(p, confInt = FALSE){
+    out <- NA # Initialize output, have NA if scale not properly written
+    if(scale == "logit"){
+      # Make sure that p is between 0 and 1 (can be different with conf int)
+      p[p < ymin] <- max(0, 0.5*ymin)
+      p[p > ymax] <- 2*ymax
+      
+      out <- log(p /(1-p)) # Logit scale
+    }
+    if(scale == "linear"){
+      out <- p # Linear scale, no change
+    }
+    out
+  }
+  par(xpd = FALSE)
+  par(las = 1, mgp = c(2, 0.3, 0), tck = -0.01)
+  
+  xmin <- min(as.Date(time), na.rm = TRUE)
+  xmax <- max(as.Date(time) - 3, na.rm = TRUE)
+
+
+  if(!add){
+    # Create new plot
+    plot(as.Date(time), changeScale(p), 
+       ylim = c(changeScale(ymin), changeScale(ymax)), 
+       xlim = c(xmin, xmax),
+       frame.plot = FALSE, 
+       xlab = "", ylab = "p", 
+       col = col, pch = 16, 
+       axes = FALSE, 
+       yaxs = "i", type = "n")
+
+      # Add graduations
+      if(scale == "linear"){
+        colGrad <- gray(0.85)
+        for(i in seq(0, 1, by = 0.1)){
+          abline(h = i, col = colGrad, lwd = 1.2)
+        }
+        for(i in seq(0.05, 0.95, by = 0.1)){
+          #      abline(h = i, col = colGrad, lwd = 0.8)
+        }
+        abline(h = 0.5, col = colGrad, lwd = 3)
+      }
+      
+    }  
+  
+  
+  xx <- base::as.Date(time)[keepPts]
+
+  # Add data points  
+  points(as.Date(time), changeScale(p), 
+       type = "p", col = col, pch = pch, cex = cexL)
+  
+  # Add confidence interval as arrows
+  arrows(x0 = xx, 
+         x1 = xx, 
+         y0 = changeScale(pp - deltaItv), 
+         y1 = changeScale(pp + deltaItv), 
+         code = 0, 
+         lwd = 3, 
+         col = adjustcolor(col, alpha.f = 0.25), 
+         lend = 1)
+
+  
+
+  if(addNotes){
+  # Add note about data and code provenance
+  mtext("Data : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
+Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/criblage2.Rmd", side = 1, line = 2.5, cex = 0.5, col = gray(0.5), adj = 0, family = "mono")
+    
+  }
+
+  
+  if(!add){
+    # Axes: 
+    # horizontal
+    xxl <- seq(as.Date(min(time)), as.Date(max(time)) + dxx, by = "day")
+    axis(1, at = xxl, 
+         labels = format(seq(as.Date(min(time)), as.Date(max(time)) + dxx, by = "day"), "%d/%m"), 
+         las = 2, 
+         cex.axis = 0.6, 
+         lwd = 0)
+    
+    # Vertical axes
+    if(scale == "linear"){
+      axis(2, lwd = 0)
+      axis(4, lwd = 0)
+    }
+    if(scale == "logit"){
+      yvalues <- c(0.999, 0.99, 0.9, 0.75, 0.5, 0.25, 0.1, 0.05, 0.025, 0.01, 0.001)
+      axis(2, at = changeScale(yvalues), labels = yvalues)
+      axis(4, at = changeScale(yvalues), labels = yvalues)
+    }
+    
+#    if(scale == "linear"){
+#      mtext("p", side = 2, las = 0, line = 2.5)
+#    }
+#    if(scale == "logit"){
+##      mtext(expression(paste("p"[0], ", logit scale")), side = 2, las = 0, line = 2.5)
+#      mtext(expression(paste("p", ", logit scale")), side = 2, las = 0, line = 2.5)
+#    }
+    
+    title(main = thetit)
+    
+  }
+  print(p[length(p)])
+}
+
+layout(1)
+par(mar = c(4, 4, 4, 4))
+ix <- which(dat.France$dateMid >= "2022-03-01")
+plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C1"], dat.France[ix, "nb_C0"], col = "red", thetit = "Proportion des tests criblés avec la mutation L452R, France", ymin = 10^-4, ymax = 0.25)
+
+plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C1.dl"], dat.France[ix, "nb_C0.dl"], col = "orange", thetit = "Proportion des tests criblés avec la mutation L452R, France", ymin = 10^-4, ymax = 0.2, add = TRUE, pch = 1)
+
+#plotReg("Île-de-France", addNotes = TRUE)
+
+layout(1)
+#plotReg("Île-de-France", addNotes = TRUE, ymax = 0.99, addLegend = TRUE)
+
+#plotReg("Île-de-France", addNotes = TRUE, ymax = 1, ymin = 0, addLegend = TRUE, scale = "linear")
+
+
+```
+
+```{r}
+plotReg <- function(reg, xmin = "2022-03-01", addNotes = FALSE, ymax = 0.05, ymin = 5*10^-4, withMut = TRUE, col = "red", scale = "logit",...){
+  
+  # Subset of the data for this region
+  dat <- dat.Regions[which(dat.Regions$reg_name == reg & dat.Regions$dateMid >= xmin), ]
+  
+  #suffix <- ifelse(deliss, ".dl", "")
+  id <- ifelse(withMut, 1, 0)
+  suffix <- ""
+  plotMut0(dat$dateMid, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = "red", thetit = "", 
+           ymin = ymin, ymax = ymax, 
+           addNotes = addNotes, scale = scale, ...)
+  
+  suffix <- ".dl"
+  plotMut0(dat$dateMid, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = "orange", thetit = "", 
+           ymin = ymin, ymax = ymax, 
+           addNotes = addNotes, add = TRUE, pch = 1, scale = scale, ...)
+  
+  title(main = reg)
+}
+
+layout(1)
+plotReg("Île-de-France")
+```
+
+```{r, fig.width=10, fig.height=15}
+
+layout(matrix(1:15, ncol = 3, byrow = TRUE))
+
+# 1 Plot legend
+par(mar = c(0, 0, 0, 0))
+plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.2, 1), ylim = c(-1, 0.5))
+legend(x = -0.15, y = 0, legend = c("Données publiques, partagées déjà lissées", "Données dé-lissées"), 
+          col = c("red", "orange"), 
+          pch = c(16, 1), 
+          box.col = gray(0, 0), bty = "n", cex = 1, pt.cex = 1.75, 
+          title = "Proportion de mutation L452R (C1),\néchelle logit")
+
+# 2 HDF
+#layout(1)
+themar <- c(2, 3, 3, 3)
+par(mar = themar)
+plotReg("Hauts-de-France")
+
+
+# 3 Plot credits
+par(mar = c(0, 0, 0, 0))
+plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.1, 1), ylim = c(-1, 1))
+text(0, 0, "Data:
+https://www.data.gouv.fr/fr/datasets/
+donnees-de-laboratoires-pour-le-
+depistage-indicateurs-sur-les-mutations/
+
+Code: https://github.com/flodebarre/
+nouveauCriblage/blob/main/scripts/criblage2.Rmd
+", adj = 0, cex = 0.8, family = "mono")
+
+# 4 NOR
+par(mar = themar)
+plotReg("Normandie")
+
+# 5 IDF
+# 
+#layout(1)
+plotReg("Île-de-France")
+
+# 6 GE
+plotReg("Grand Est")
+
+# 7 BRE
+plotReg("Bretagne")
+
+# 8 CVL
+plotReg("Centre-Val de Loire")
+
+# 9 BFC
+plotReg("Bourgogne-Franche-Comté")
+
+# 10 PDL
+plotReg("Pays de la Loire")
+
+# 11 ARA
+plotReg("Auvergne-Rhône-Alpes")
+
+# 12 PACA
+plotReg("Provence-Alpes-Côte d'Azur")
+
+# 13 NAQ
+plotReg("Nouvelle-Aquitaine")
+
+# 14 OCC
+plotReg("Occitanie")
+
+# 15 COR
+plotReg("Corse")
+```
+
