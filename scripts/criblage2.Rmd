@@ -18,8 +18,7 @@ setwd("scripts/")
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
-Source of the data:  
+Source of the criblage data:  
 <https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/>
 
 # Initializations
@@ -31,7 +30,6 @@ cleanMergeData <- FALSE
 # Whether to download the data
 # (if cleanMergeData == TRUE only)
 dlData <- FALSE
-
 ```
 
 # Load data 
@@ -63,6 +61,8 @@ dat.Deps$dateDeliss <- as.Date(dat.Deps$dateDeliss)
 ```
 
 # Plots
+
+## Define plotting function (and plot France)
 
 ```{r}
 plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 10^-6, denom = 7, scale = "logit", add = FALSE, addNotes = TRUE, pch = 16){
@@ -163,7 +163,6 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
          col = adjustcolor(col, alpha.f = 0.25), 
          lend = 1)
 
-  
 
   if(addNotes){
   # Add note about data and code provenance
@@ -194,64 +193,62 @@ Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/criblage2
       axis(4, at = changeScale(yvalues), labels = yvalues)
     }
     
-#    if(scale == "linear"){
-#      mtext("p", side = 2, las = 0, line = 2.5)
-#    }
-#    if(scale == "logit"){
-##      mtext(expression(paste("p"[0], ", logit scale")), side = 2, las = 0, line = 2.5)
-#      mtext(expression(paste("p", ", logit scale")), side = 2, las = 0, line = 2.5)
-#    }
-    
     title(main = thetit)
     
   }
   print(p[length(p)])
 }
 
+# Plot France
+
 layout(1)
 par(mar = c(4, 4, 4, 4))
 ix <- which(dat.France$dateMid >= "2022-03-01")
-plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C1"], dat.France[ix, "nb_C0"], col = "red", thetit = "Proportion des tests criblés avec la mutation L452R, France", ymin = 10^-4, ymax = 0.25)
-
-plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C1.dl"], dat.France[ix, "nb_C0.dl"], col = "orange", thetit = "Proportion des tests criblés avec la mutation L452R, France", ymin = 10^-4, ymax = 0.2, add = TRUE, pch = 1)
-
-#plotReg("Île-de-France", addNotes = TRUE)
-
-layout(1)
-#plotReg("Île-de-France", addNotes = TRUE, ymax = 0.99, addLegend = TRUE)
-
-#plotReg("Île-de-France", addNotes = TRUE, ymax = 1, ymin = 0, addLegend = TRUE, scale = "linear")
-
-
+ym <- 5*10^-4 # plot range, minimal y value
+yM <- 0.05 # Plot range, max y value
+# Plot data as shared on data.gouv.fr
+plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C1"], dat.France[ix, "nb_C0"], col = "red", thetit = "Proportion des tests criblés avec la mutation L452R, France", ymin = ym, ymax = yM)
+# Add data "delisse"
+plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C1.dl"], dat.France[ix, "nb_C0.dl"], col = "orange", add = TRUE, pch = 1)
 ```
 
+## By region 
+
 ```{r}
+# Define function to plot a specific region reg
 plotReg <- function(reg, xmin = "2022-03-01", addNotes = FALSE, ymax = 0.05, ymin = 5*10^-4, withMut = TRUE, col = "red", scale = "logit",...){
+  # withMut: whether to plot C1 / (C1 + C0) (TRUE), or C0 / (C1 + C0)
   
   # Subset of the data for this region
   dat <- dat.Regions[which(dat.Regions$reg_name == reg & dat.Regions$dateMid >= xmin), ]
   
   #suffix <- ifelse(deliss, ".dl", "")
   id <- ifelse(withMut, 1, 0)
+  
+  # Plot data as shared on data.gouv.fr
   suffix <- ""
   plotMut0(dat$dateMid, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = "red", thetit = "", 
            ymin = ymin, ymax = ymax, 
            addNotes = addNotes, scale = scale, ...)
   
+  # Plot data delisse
   suffix <- ".dl"
   plotMut0(dat$dateMid, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = "orange", thetit = "", 
            ymin = ymin, ymax = ymax, 
            addNotes = addNotes, add = TRUE, pch = 1, scale = scale, ...)
-  
+
+  # Region name as title  
   title(main = reg)
 }
 
+# Check function with IDF region
 layout(1)
 plotReg("Île-de-France")
 ```
 
 ```{r, fig.width=10, fig.height=15}
 
+# Multi-figure plot
 layout(matrix(1:15, ncol = 3, byrow = TRUE))
 
 # 1 Plot legend
@@ -268,7 +265,6 @@ legend(x = -0.15, y = 0, legend = c("Données publiques, partagées déjà liss�
 themar <- c(2, 3, 3, 3)
 par(mar = themar)
 plotReg("Hauts-de-France")
-
 
 # 3 Plot credits
 par(mar = c(0, 0, 0, 0))
