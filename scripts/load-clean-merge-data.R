@@ -1,8 +1,15 @@
 #### INITIALIZATIONS #### 
 
+plotCompare <- FALSE
+
 # Sliding window function
 source("usefulFunctions.R")
 
+library("MetBrewer")
+colON <- met.brewer("Tiepolo", n = 5, type = "discrete")
+colOld <- colON[2]
+colNew <- colON[3]
+colCombined <- colON[5]
 
 #### LOAD DATA ####
 
@@ -293,19 +300,21 @@ lwdCombined <- 1.5
 
 # Plot colums to check that things are done alright
 compare.xy <- function(dat, col, addCombined = TRUE){
-  # dat: dataset
-  # col: column
-  par(las = 1, xpd = TRUE)
-  plot(dat$dateMid, dat[, paste0(col, ".x")], xlab = "", ylab = "", main = col, col = colNew, pch = pchNew)
-  points(dat$dateMid, dat[, paste0(col, ".y")], col = colOld, pch = pchOld, cex = 1)
-  
-  if(addCombined){
-    points(dat$dateMid, dat[, col], pch = pchCombined, col = colCombined, lwd = lwdCombined)
-    legend("topleft", col = c(colNew, colOld, colCombined), pch = c(pchNew, pchOld, pchCombined), legend = c("new", "old", "combined"), bty = "n", lwd = c(1, 1, lwd = lwdCombined), lty = 0)
-  }else{
-    legend("topleft", col = c(colNew, colOld), pch = c(pchNew, pchOld), legend = c("new", "old"), bty = "n")
+  if(plotCompare){ # Only do this if plotCompare == TRUE
+    # dat: dataset
+    # col: column
+    par(las = 1, xpd = TRUE)
+    plot(dat$dateMid, dat[, paste0(col, ".x")], xlab = "", ylab = "", main = col, col = colNew, pch = pchNew)
+    points(dat$dateMid, dat[, paste0(col, ".y")], col = colOld, pch = pchOld, cex = 1)
+    
+    if(addCombined){
+      points(dat$dateMid, dat[, col], pch = pchCombined, col = colCombined, lwd = lwdCombined)
+      legend("topleft", col = c(colNew, colOld, colCombined), pch = c(pchNew, pchOld, pchCombined), legend = c("new", "old", "combined"), bty = "n", lwd = c(1, 1, lwd = lwdCombined), lty = 0)
+    }else{
+      legend("topleft", col = c(colNew, colOld), pch = c(pchNew, pchOld), legend = c("new", "old"), bty = "n")
+    }
+    par(xpd = FALSE)
   }
-  par(xpd = FALSE)
 }
 
 # Sum columns, in spite of NAs
