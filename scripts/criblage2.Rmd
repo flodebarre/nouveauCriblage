@@ -1,9 +1,12 @@
 ---
 title: "R Notebook"
-output: 
+output:
+  html_document:
+    df_print: paged
+    self_contained: no
   html_notebook:
     self_contained: no
-editor_options: 
+editor_options:
   chunk_output_type: console
 ---
 
@@ -61,6 +64,15 @@ dat.Deps$dateDeliss <- as.Date(dat.Deps$dateDeliss)
 ```
 
 # Plots
+
+## Parameters
+
+```{r}
+library(MetBrewer)
+pal <- met.brewer("Hokusai2", 2, "discrete")
+colLiss <- pal[2]
+colDeliss <- pal[1]
+```
 
 ## Define plotting function (and plot France)
 
@@ -166,9 +178,11 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
 
   if(addNotes){
   # Add note about data and code provenance
-  mtext("Data : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
-Code : https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/criblage2.Rmd", side = 1, line = 2.5, cex = 0.5, col = gray(0.5), adj = 0, family = "mono")
+  mtext("Data: https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/
+Code: https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/criblage2.Rmd", side = 1, line = 2.5, cex = 0.5, col = gray(0.5), adj = 0, family = "mono")
+   
     
+    legend("topleft", bty = "n", col = c(colLiss, colDeliss), pch = c(16, 1), legend = c("7-d averaged data (as provided)", "'un-smoothened' data")) 
   }
 
   
@@ -207,16 +221,17 @@ ix <- which(dat.France$dateMid >= "2022-03-01")
 ym <- 5*10^-4 # plot range, minimal y value
 yM <- 0.05 # Plot range, max y value
 # Plot data as shared on data.gouv.fr
-plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C1"], dat.France[ix, "nb_C0"], col = "red", thetit = "Proportion des tests criblés avec la mutation L452R, France", ymin = ym, ymax = yM)
+plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C1"], dat.France[ix, "nb_C0"], col = colLiss, thetit = "Proportion of L452R+ tests, France", ymin = ym, ymax = yM)
 # Add data "delisse"
-plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C1.dl"], dat.France[ix, "nb_C0.dl"], col = "orange", add = TRUE, pch = 1)
+plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C1.dl"], dat.France[ix, "nb_C0.dl"], col = colDeliss, add = TRUE, pch = 1)
+
 ```
 
 ## By region 
 
 ```{r}
 # Define function to plot a specific region reg
-plotReg <- function(reg, xmin = "2022-03-01", addNotes = FALSE, ymax = 0.05, ymin = 5*10^-4, withMut = TRUE, col = "red", scale = "logit",...){
+plotReg <- function(reg, xmin = "2022-03-01", addNotes = FALSE, ymax = 0.05, ymin = 5*10^-4, withMut = TRUE, col = colLiss, scale = "logit",...){
   # withMut: whether to plot C1 / (C1 + C0) (TRUE), or C0 / (C1 + C0)
   
   # Subset of the data for this region
@@ -227,13 +242,13 @@ plotReg <- function(reg, xmin = "2022-03-01", addNotes = FALSE, ymax = 0.05, ymi
   
   # Plot data as shared on data.gouv.fr
   suffix <- ""
-  plotMut0(dat$dateMid, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = "red", thetit = "", 
+  plotMut0(dat$dateMid, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = colLiss, thetit = "", 
            ymin = ymin, ymax = ymax, 
            addNotes = addNotes, scale = scale, ...)
   
   # Plot data delisse
   suffix <- ".dl"
-  plotMut0(dat$dateMid, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = "orange", thetit = "", 
+  plotMut0(dat$dateMid, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = colDeliss, thetit = "", 
            ymin = ymin, ymax = ymax, 
            addNotes = addNotes, add = TRUE, pch = 1, scale = scale, ...)
 
@@ -255,7 +270,7 @@ layout(matrix(1:15, ncol = 3, byrow = TRUE))
 par(mar = c(0, 0, 0, 0))
 plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.2, 1), ylim = c(-1, 0.5))
 legend(x = -0.15, y = 0, legend = c("Données publiques, partagées déjà lissées", "Données dé-lissées"), 
-          col = c("red", "orange"), 
+          col = c(colLiss, colDeliss), 
           pch = c(16, 1), 
           box.col = gray(0, 0), bty = "n", cex = 1, pt.cex = 1.75, 
           title = "Proportion de mutation L452R (C1),\néchelle logit")
