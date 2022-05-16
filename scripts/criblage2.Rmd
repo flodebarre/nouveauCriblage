@@ -63,21 +63,32 @@ dat.Deps$dateMid <- as.Date(dat.Deps$dateMid)
 dat.Deps$dateDeliss <- as.Date(dat.Deps$dateDeliss)
 ```
 
+## Other
+
+```{r}
+# Define inverse logit
+myinvlogit <- function(x) exp(x) / (1 + exp(x))
+```
+
 # Plots
 
 ## Parameters
 
 ```{r}
 library(MetBrewer)
-pal <- met.brewer("Hokusai2", 2, "discrete")
+pal <- met.brewer("Hokusai3", 2, "discrete")
 colLiss <- pal[2]
 colDeliss <- pal[1]
+
+pal <- MetBrewer::met.brewer("Java", 5, "discrete")
+colLiss2 <- pal[1]
+colDeliss2 <- pal[4]
 ```
 
 ## Define plotting function (and plot France)
 
 ```{r}
-plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 10^-6, denom = 7, scale = "logit", add = FALSE, addNotes = TRUE, pch = 16){
+plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 10^-6, denom = 7, scale = "logit", add = FALSE, addNotes = TRUE, pch = 16, lang = "FR", percent = TRUE){
   # -- here showing n0/(n0+n1) --
   # time: vector of values of times of sample collection
   # test0: vector of numbers of tests with value 0
@@ -132,6 +143,7 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
   xmin <- min(as.Date(time), na.rm = TRUE)
   xmax <- max(as.Date(time) - 3, na.rm = TRUE)
 
+  factor <- ifelse(percent, 100, 1)
 
   if(!add){
     # Create new plot
@@ -182,7 +194,12 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
 Code: https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/criblage2.Rmd", side = 1, line = 2.5, cex = 0.5, col = gray(0.5), adj = 0, family = "mono")
    
     
-    legend("topleft", bty = "n", col = c(colLiss, colDeliss), pch = c(16, 1), legend = c("7-d averaged data (as provided)", "'un-smoothened' data")) 
+    if(lang == "FR"){
+      txt <- c("À partir de données déjà lissées sur 7j (comme fournies)", "À partir de données délissées (approximatives)")
+    }else{
+     txt <- c("7-d averaged data (as provided)", "'un-smoothened' data") 
+    }
+    legend("topleft", bty = "n", col = c(colLiss, colDeliss), pch = c(16, 1), legend = txt) 
   }
 
   
@@ -202,9 +219,9 @@ Code: https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/criblage2.
       axis(4, lwd = 0)
     }
     if(scale == "logit"){
-      yvalues <- c(0.999, 0.99, 0.9, 0.75, 0.5, 0.25, 0.1, 0.05, 0.025, 0.01, 0.001)
-      axis(2, at = changeScale(yvalues), labels = yvalues)
-      axis(4, at = changeScale(yvalues), labels = yvalues)
+      yvalues <- c(0.9999, 0.999, 0.99, 0.9, 0.75, 0.5, 0.25, 0.1, 0.05, 0.025, 0.01, 0.001, 0.0001)
+      axis(2, at = changeScale(yvalues), labels = factor * yvalues)
+      axis(4, at = changeScale(yvalues), labels = factor * yvalues)
     }
     
     title(main = thetit)
@@ -212,26 +229,82 @@ Code: https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/criblage2.
   }
   print(p[length(p)])
 }
+```
 
+
+```{r L452R_France}
 # Plot France
-
 layout(1)
 par(mar = c(4, 4, 4, 4))
 ix <- which(dat.France$dateMid >= "2022-03-01")
 ym <- 5*10^-4 # plot range, minimal y value
 yM <- 0.05 # Plot range, max y value
+lang <- "FR"
+percent <- FALSE
 # Plot data as shared on data.gouv.fr
-plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C1"], dat.France[ix, "nb_C0"], col = colLiss, thetit = "Proportion of L452R+ tests, France", ymin = ym, ymax = yM)
+tt <- ifelse(percent, ifelse(lang == "FR", "Pourcentage", "Percentage"), "Proportion")
+tit <- ifelse(lang == "FR", "Proportion de tests L452R+, France", "Proportion of L452R+ tests, France") # Title
+plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C1"], dat.France[ix, "nb_C0"], col = colLiss, thetit = tit, ymin = ym, ymax = yM, lang = lang)
 # Add data "delisse"
 plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C1.dl"], dat.France[ix, "nb_C0.dl"], col = colDeliss, add = TRUE, pch = 1)
+```
 
+```{r D_France}
+# Plot France
+layout(1)
+par(mar = c(4, 4, 4, 4))
+ix <- which(dat.France$dateMid >= "2022-03-01")
+ym <- 0.95 # plot range, minimal y value
+yM <- 1 - 10^-4 # Plot range, max y value
+# Plot data as shared on data.gouv.fr
+plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_D1"], dat.France[ix, "nb_D0"], col = colLiss, thetit = "Proportion of K417N+ tests, France", ymin = ym, ymax = yM)
+# Add data "delisse"
+plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_D1.dl"], dat.France[ix, "nb_D0.dl"], col = colDeliss, add = TRUE, pch = 1)
+```
+
+### Stats
+
+```{r}
+dat <- dat.France # Dataset to be used
+n1 <- "nb_C1.dl" # Numbers of + (or -)
+n2 <- "nb_C0.dl" # Numbers of - (or +)
+dx <- 60 # Number of days forward for projection
+nDaysEstim <- 21 # Number of days back for the estimation
+
+# Day at which estimation starts
+first_date <- max(dat$dateMid, na.rm = TRUE) - 3 - nDaysEstim
+
+# Subset of the data after that date
+sub <- dat[dat$dateMid >= first_date, ]
+# Define time column (obsolete)
+sub$time <- as.numeric(sub$dateMid - sub$dateMid[1])
+
+# Fit logistic model
+glm0 <- glm(as.matrix(sub[, c(n1, n2)]) ~  dateMid, family = binomial(link="logit"), data = sub)
+
+# Print summary
+print(summary(glm0))
+glm0$coefficients
+
+# x values for the prediction (dx days after the last one)
+# xpred <- seq(min(sub$time), max(sub$time) + dx)
+xpred <- seq(min(sub$dateMid), max(sub$dateMid) + dx, by = "day")
+# Predicted values from the model
+pred <- predict(glm0, type = "response", newdata = data.frame(dateMid = xpred), se.fit = TRUE)
+plot(xpred, pred$fit, type = "l", lwd = 2)
+#pred2 <- predict(glm0, type = "link", newdata = data.frame(time = xpred), se.fit = TRUE)
+#points(xpred, myinvlogit(pred2$fit), pch = 2, col = 2)
+
+  # Plot the contour of the prediction as polygon +/- CI
+#  polygon(x = c(xpred, rev(xpred)), y = c(myinvlogit(pred2$fit - 1.96 * pred2$se.fit), rev(myinvlogit(pred2$fit + 1.96 * pred2$se.fit))), col = adjustcolor("pink", 0.4), border = NA)
+  polygon(x = c(xpred, rev(xpred)), y = c(pred$fit - 1.96 * pred$se.fit, rev(pred$fit + 1.96 * pred$se.fit)), col = adjustcolor("blue", 0.4), border = NA)
 ```
 
 ## By region 
 
 ```{r}
 # Define function to plot a specific region reg
-plotReg <- function(reg, xmin = "2022-03-01", addNotes = FALSE, ymax = 0.05, ymin = 5*10^-4, withMut = TRUE, col = colLiss, scale = "logit",...){
+plotReg <- function(reg, xmin = "2022-03-01", addNotes = FALSE, ymax = 0.05, ymin = 1*10^-4, withMut = TRUE, col = colLiss, scale = "logit", percent = FALSE, ...){
   # withMut: whether to plot C1 / (C1 + C0) (TRUE), or C0 / (C1 + C0)
   
   # Subset of the data for this region
@@ -244,7 +317,7 @@ plotReg <- function(reg, xmin = "2022-03-01", addNotes = FALSE, ymax = 0.05, ymi
   suffix <- ""
   plotMut0(dat$dateMid, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = colLiss, thetit = "", 
            ymin = ymin, ymax = ymax, 
-           addNotes = addNotes, scale = scale, ...)
+           addNotes = addNotes, scale = scale, percent = percent,...)
   
   # Plot data delisse
   suffix <- ".dl"
@@ -261,7 +334,7 @@ layout(1)
 plotReg("Île-de-France")
 ```
 
-```{r, fig.width=10, fig.height=15}
+```{r L452R_Regions, fig.width=7, fig.height=10}
 
 # Multi-figure plot
 layout(matrix(1:15, ncol = 3, byrow = TRUE))
@@ -272,7 +345,7 @@ plot(0, 0, xlab = "", ylab = "", type = "n", axes = FALSE, xlim = c(-0.2, 1), yl
 legend(x = -0.15, y = 0, legend = c("Données publiques, partagées déjà lissées", "Données dé-lissées"), 
           col = c(colLiss, colDeliss), 
           pch = c(16, 1), 
-          box.col = gray(0, 0), bty = "n", cex = 1, pt.cex = 1.75, 
+          box.col = gray(0, 0), bty = "n", cex = 0.9, pt.cex = 1.75, 
           title = "Proportion de mutation L452R (C1),\néchelle logit")
 
 # 2 HDF
@@ -291,7 +364,7 @@ depistage-indicateurs-sur-les-mutations/
 
 Code: https://github.com/flodebarre/
 nouveauCriblage/blob/main/scripts/criblage2.Rmd
-", adj = 0, cex = 0.8, family = "mono")
+", adj = 0, cex = 0.6, family = "mono")
 
 # 4 NOR
 par(mar = themar)
@@ -333,3 +406,6 @@ plotReg("Occitanie")
 plotReg("Corse")
 ```
 
+Alt text: graphique à 13 sous-figures, représentant pour chaque région de France métropolitaine la proportion de L452R+ au cours du temps. Augmentation partout, mais pas depuis le même moment ni exactement au même taux
+
+tweet quote logit: https://twitter.com/flodebarre/status/1525063184150822912?s=20&t=iuVJ996CxQCT6v_UlfGh4Q
