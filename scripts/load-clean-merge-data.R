@@ -101,9 +101,9 @@ if(!is.na(URL_Deps)){
 # New Source:
 # <https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-a-compter-du-18-05-2022-si-dep/>
   
-URLtest_France <- "https://www.data.gouv.fr/fr/datasets/r/d349accb-56ef-4b53-b218-46c2a7f902e0" #"https://www.data.gouv.fr/fr/datasets/r/dd0de5d9-b5a5-4503-930a-7b08dc0adc7c"
-URLtest_Reg <- "https://www.data.gouv.fr/fr/datasets/r/8b382611-4b86-41ff-9e58-9ee638a6d564" #"https://www.data.gouv.fr/fr/datasets/r/001aca18-df6a-45c8-89e6-f82d689e6c01"
-URLtest_Dep <- "https://www.data.gouv.fr/fr/datasets/r/674bddab-6d61-4e59-b0bd-0be535490db0" #"https://www.data.gouv.fr/fr/datasets/r/406c6a23-e283-4300-9484-54e78c8ae675"
+URLtest_France <- "https://www.data.gouv.fr/fr/datasets/r/4e8d826a-d2a1-4d69-9ed0-b18a1f3d5ce2"#"https://www.data.gouv.fr/fr/datasets/r/d349accb-56ef-4b53-b218-46c2a7f902e0" #"https://www.data.gouv.fr/fr/datasets/r/dd0de5d9-b5a5-4503-930a-7b08dc0adc7c"
+URLtest_Reg <- "https://www.data.gouv.fr/fr/datasets/r/10639654-3864-48ac-b024-d772c218c4c1" #"https://www.data.gouv.fr/fr/datasets/r/8b382611-4b86-41ff-9e58-9ee638a6d564" #"https://www.data.gouv.fr/fr/datasets/r/001aca18-df6a-45c8-89e6-f82d689e6c01"
+URLtest_Dep <- "https://www.data.gouv.fr/fr/datasets/r/426bab53-e3f5-4c6a-9d54-dba4442b3dbc" #"https://www.data.gouv.fr/fr/datasets/r/674bddab-6d61-4e59-b0bd-0be535490db0" #"https://www.data.gouv.fr/fr/datasets/r/406c6a23-e283-4300-9484-54e78c8ae675"
 
 if(dlData){
   download.file(URLtest_France, "../data/tests_France.csv")
@@ -120,19 +120,18 @@ tests.Reg <- read.csv("../data/tests_Reg.csv", sep = ";", stringsAsFactors = FAL
 tests.Deps <- read.csv("../data/tests_Deps.csv", sep = ";", stringsAsFactors = FALSE, dec = ",")
 
 # Criblage is without age classes: remove them now to avoid errors
-#tests.France <- tests.France[which(tests.France$cl_age90 == 0), ]
-#tests.Reg <- tests.Reg[which(tests.Reg$cl_age90 == 0), ]
-#tests.Deps <- tests.Deps[which(tests.Deps$cl_age90 == 0), ]
+tests.France <- tests.France[which(tests.France$cl_age90 == 0), ]
+tests.Reg <- tests.Reg[which(tests.Reg$cl_age90 == 0), ]
+tests.Deps <- tests.Deps[which(tests.Deps$cl_age90 == 0), ]
 
 # Hopefully this is only temporary: the 0 age class with all data has gone missing...
-tF <- aggregate(tests.France[, c("P", "T")], by = list("jour" = tests.France$jour), FUN = sum)
-tR <- aggregate(tests.Reg[, c("P", "T")], by = list("reg" = tests.Reg$reg, "jour" = tests.Reg$jour), FUN = sum)
-head(tests.Deps)
-tD <- aggregate(tests.Deps[, c("P", "T")], by = list("dep" = tests.Deps$dep, "jour" = tests.Deps$jour), FUN = sum)
+#tF <- aggregate(tests.France[, c("P", "T")], by = list("jour" = tests.France$jour), FUN = sum)
+#tR <- aggregate(tests.Reg[, c("P", "T")], by = list("reg" = tests.Reg$reg, "jour" = tests.Reg$jour), FUN = sum)
+#tD <- aggregate(tests.Deps[, c("P", "T")], by = list("dep" = tests.Deps$dep, "jour" = tests.Deps$jour), FUN = sum)
 
-tests.France <- tF
-tests.Reg <- tR
-tests.Deps <- tD
+#tests.France <- tF
+#tests.Reg <- tR
+#tests.Deps <- tD
 #--- end of hopefully temporary section
 
 

@@ -21,18 +21,21 @@ setwd("scripts/")
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Source of the criblage data:  
+Old Source of the criblage data:  
 <https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/>
 
+New Source: 
+<https://www.data.gouv.fr/fr/datasets/r/3e4fa086-8642-4d30-8316-7d4ec4cf893b>
 # Initializations
 
 ```{r loadClearMergeData}
-# Whether to recompute the combined datasets and delissage
-cleanMergeData <- FALSE
-
 # Whether to download the data
 # (if cleanMergeData == TRUE only)
 dlData <- FALSE
+
+# Whether to recompute the combined datasets and delissage
+cleanMergeData <- FALSE
+if(dlData) cleanMergeData <- TRUE
 ```
 
 # Load data 
@@ -50,17 +53,10 @@ dat.Deps <- read.csv("../data/datCribTest_Deps.csv")
 
 
 # Turn dates back into dates
-dat.France$date2 <- as.Date(dat.France$date2)
-dat.France$dateMid <- as.Date(dat.France$dateMid)
-dat.France$dateDeliss <- as.Date(dat.France$dateDeliss)
+dat.France$date <- as.Date(dat.France$date)
+dat.Regions$date <- as.Date(dat.Regions$date)
+dat.Deps$date <- as.Date(dat.Deps$date)
 
-dat.Regions$date2 <- as.Date(dat.Regions$date2)
-dat.Regions$dateMid <- as.Date(dat.Regions$dateMid)
-dat.Regions$dateDeliss <- as.Date(dat.Regions$dateDeliss)
-
-dat.Deps$date2 <- as.Date(dat.Deps$date2)
-dat.Deps$dateMid <- as.Date(dat.Deps$dateMid)
-dat.Deps$dateDeliss <- as.Date(dat.Deps$dateDeliss)
 ```
 
 ## Other
@@ -68,6 +64,11 @@ dat.Deps$dateDeliss <- as.Date(dat.Deps$dateDeliss)
 ```{r}
 # Define inverse logit
 myinvlogit <- function(x) exp(x) / (1 + exp(x))
+
+# Logit
+logit <- function(p){
+  log(p / (1-p))
+} 
 ```
 
 # Plots
@@ -88,7 +89,10 @@ colDeliss2 <- pal[4]
 ## Define plotting function (and plot France)
 
 ```{r}
-plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 10^-6, denom = 7, scale = "logit", add = FALSE, addNotes = TRUE, pch = 16, lang = "FR", percent = TRUE){
+
+yvalues <- c(0.9999, 0.999, 0.99, 0.9, 0.75, 0.5, 0.25, 0.1, 0.05, 0.025, 0.01, 0.001, 0.0001)
+
+plotMut0 <- function(time, test0, test1, col, thetit = "", ymin = 10^-6, ymax = 1 - 10^-6, denom = 7, scale = "logit", add = FALSE, addNotes = TRUE, pch = 16, lang = "FR", percent = TRUE, axes = TRUE, title = TRUE){
   # -- here showing n0/(n0+n1) --
   # time: vector of values of times of sample collection
   # test0: vector of numbers of tests with value 0
@@ -141,7 +145,7 @@ plotMut0 <- function(time, test0, test1, col, thetit, ymin = 10^-6, ymax = 1 - 1
   par(las = 1, mgp = c(2, 0.3, 0), tck = -0.01)
   
   xmin <- min(as.Date(time), na.rm = TRUE)
-  xmax <- max(as.Date(time) - 3, na.rm = TRUE)
+  xmax <- max(as.Date(time), na.rm = TRUE)
 
   factor <- ifelse(percent, 100, 1)
 
@@ -203,7 +207,7 @@ Code: https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/criblage2.
   }
 
   
-  if(!add){
+  if(axes & !add){
     # Axes: 
     # horizontal
     xxl <- seq(as.Date(min(time)), as.Date(max(time)) + dxx, by = "day")
@@ -219,13 +223,13 @@ Code: https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/criblage2.
       axis(4, lwd = 0)
     }
     if(scale == "logit"){
-      yvalues <- c(0.9999, 0.999, 0.99, 0.9, 0.75, 0.5, 0.25, 0.1, 0.05, 0.025, 0.01, 0.001, 0.0001)
       axis(2, at = changeScale(yvalues), labels = factor * yvalues)
       axis(4, at = changeScale(yvalues), labels = factor * yvalues)
     }
-    
+  }
+  
+  if(title){
     title(main = thetit)
-    
   }
   print(p[length(p)])
 }
@@ -236,7 +240,7 @@ Code: https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/criblage2.
 # Plot France
 layout(1)
 par(mar = c(4, 4, 4, 4))
-ix <- which(dat.France$dateMid >= "2022-03-01")
+ix <- which(dat.France$date >= "2022-03-01")
 ym <- 5*10^-4 # plot range, minimal y value
 yM <- 0.05 # Plot range, max y value
 lang <- "FR"
@@ -244,27 +248,27 @@ percent <- FALSE
 # Plot data as shared on data.gouv.fr
 tt <- ifelse(percent, ifelse(lang == "FR", "Pourcentage", "Percentage"), "Proportion")
 tit <- ifelse(lang == "FR", "Proportion de tests L452R+, France", "Proportion of L452R+ tests, France") # Title
-plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C1"], dat.France[ix, "nb_C0"], col = colLiss, thetit = tit, ymin = ym, ymax = yM, lang = lang)
+plotMut0(dat.France[ix, "date"], dat.France[ix, "nb_C1.sum7_mid"], dat.France[ix, "nb_C0.sum7_mid"], col = colLiss, thetit = tit, ymin = ym, ymax = yM, lang = lang, percent = percent)
 # Add data "delisse"
-plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_C1.dl"], dat.France[ix, "nb_C0.dl"], col = colDeliss, add = TRUE, pch = 1)
+plotMut0(dat.France[ix, "date"], dat.France[ix, "nb_C1.dl"], dat.France[ix, "nb_C0.dl"], col = colDeliss, add = TRUE, pch = 1)
 ```
 
 ```{r D_France}
 # Plot France
 layout(1)
 par(mar = c(4, 4, 4, 4))
-ix <- which(dat.France$dateMid >= "2022-03-01")
+ix <- which(dat.France$date >= "2022-03-01")
 ym <- 0.95 # plot range, minimal y value
 yM <- 1 - 10^-4 # Plot range, max y value
 # Plot data as shared on data.gouv.fr
-plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_D1"], dat.France[ix, "nb_D0"], col = colLiss, thetit = "Proportion of K417N+ tests, France", ymin = ym, ymax = yM)
+plotMut0(dat.France[ix, "date"], dat.France[ix, "nb_D1.sum7_mid"], dat.France[ix, "nb_D0.sum7_mid"], col = colLiss, thetit = "Proportion of K417N+ tests, France", ymin = ym, ymax = yM, percent = percent)
 # Add data "delisse"
-plotMut0(dat.France[ix, "dateMid"], dat.France[ix, "nb_D1.dl"], dat.France[ix, "nb_D0.dl"], col = colDeliss, add = TRUE, pch = 1)
+plotMut0(dat.France[ix, "date"], dat.France[ix, "nb_D1.dl"], dat.France[ix, "nb_D0.dl"], col = colDeliss, add = TRUE, pch = 1)
 ```
 
 ### Stats
 
-```{r}
+```{r fitFrance}
 dat <- dat.France # Dataset to be used
 n1 <- "nb_C1.dl" # Numbers of + (or -)
 n2 <- "nb_C0.dl" # Numbers of - (or +)
@@ -272,15 +276,15 @@ dx <- 60 # Number of days forward for projection
 nDaysEstim <- 21 # Number of days back for the estimation
 
 # Day at which estimation starts
-first_date <- max(dat$dateMid, na.rm = TRUE) - 3 - nDaysEstim
+first_date <- max(dat$date, na.rm = TRUE) - 3 - nDaysEstim
 
 # Subset of the data after that date
-sub <- dat[dat$dateMid >= first_date, ]
+sub <- dat[dat$date >= first_date, ]
 # Define time column (obsolete)
-sub$time <- as.numeric(sub$dateMid - sub$dateMid[1])
+sub$time <- as.numeric(sub$date - sub$date[1])
 
 # Fit logistic model
-glm0 <- glm(as.matrix(sub[, c(n1, n2)]) ~  dateMid, family = binomial(link="logit"), data = sub)
+glm0 <- glm(as.matrix(sub[, c(n1, n2)]) ~  date, family = binomial(link="logit"), data = sub)
 
 # Print summary
 print(summary(glm0))
@@ -288,40 +292,55 @@ glm0$coefficients
 
 # x values for the prediction (dx days after the last one)
 # xpred <- seq(min(sub$time), max(sub$time) + dx)
-xpred <- seq(min(sub$dateMid), max(sub$dateMid) + dx, by = "day")
+xpred <- seq(min(sub$date), max(sub$date) + dx, by = "day")
 # Predicted values from the model
-pred <- predict(glm0, type = "response", newdata = data.frame(dateMid = xpred), se.fit = TRUE)
-plot(xpred, pred$fit, type = "l", lwd = 2)
+pred <- predict(glm0, type = "response", newdata = data.frame(date = xpred), se.fit = TRUE)
+plot(xpred, pred$fit, type = "l", lwd = 2, 
+     xlab = "date", ylab = "Proportion", axes = FALSE)
 #pred2 <- predict(glm0, type = "link", newdata = data.frame(time = xpred), se.fit = TRUE)
 #points(xpred, myinvlogit(pred2$fit), pch = 2, col = 2)
 
   # Plot the contour of the prediction as polygon +/- CI
 #  polygon(x = c(xpred, rev(xpred)), y = c(myinvlogit(pred2$fit - 1.96 * pred2$se.fit), rev(myinvlogit(pred2$fit + 1.96 * pred2$se.fit))), col = adjustcolor("pink", 0.4), border = NA)
   polygon(x = c(xpred, rev(xpred)), y = c(pred$fit - 1.96 * pred$se.fit, rev(pred$fit + 1.96 * pred$se.fit)), col = adjustcolor("blue", 0.4), border = NA)
+  points(x = sub$date, y = sub[, n1] / (sub[, n1] + sub[, n2]))
+axis(1, at = xpred, labels = format(xpred, "%d/%m"), las = 3, cex.axis = 0.9)
+axis(2, at = seq(0, 1, by = 0.05))
+
+# Logit version  
+plot(xpred, logit(pred$fit), type = "l", lwd = 2, 
+     xlab = "date", ylab = "Proportion (logit)", axes = FALSE)
+axis(1, at = xpred, labels = format(xpred, "%d/%m"), las = 3, cex.axis = 0.9)
+axis(2, at = logit(yvalues), labels = yvalues)
+  
+polygon(x = c(xpred, rev(xpred)), y = logit(c(pred$fit - 1.96 * pred$se.fit, rev(pred$fit + 1.96 * pred$se.fit))), col = adjustcolor("blue", 0.4), border = NA)
+
+points(x = sub$date, y = logit(sub[, n1] / (sub[, n1] + sub[, n2])))
+  
 ```
 
 ## By region 
 
 ```{r}
 # Define function to plot a specific region reg
-plotReg <- function(reg, xmin = "2022-03-01", addNotes = FALSE, ymax = 0.05, ymin = 1*10^-4, withMut = TRUE, col = colLiss, scale = "logit", percent = FALSE, ...){
+plotReg <- function(reg, xmin = "2022-03-01", addNotes = FALSE, ymax = 0.1, ymin = 5*10^-4, withMut = TRUE, col = colLiss, scale = "logit", percent = FALSE, ...){
   # withMut: whether to plot C1 / (C1 + C0) (TRUE), or C0 / (C1 + C0)
   
   # Subset of the data for this region
-  dat <- dat.Regions[which(dat.Regions$reg_name == reg & dat.Regions$dateMid >= xmin), ]
+  dat <- dat.Regions[which(dat.Regions$reg_name == reg & dat.Regions$date >= xmin), ]
   
   #suffix <- ifelse(deliss, ".dl", "")
   id <- ifelse(withMut, 1, 0)
   
   # Plot data as shared on data.gouv.fr
-  suffix <- ""
-  plotMut0(dat$dateMid, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = colLiss, thetit = "", 
+  suffix <- ".sum7_mid"
+  plotMut0(dat$date, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = colLiss, thetit = "", 
            ymin = ymin, ymax = ymax, 
            addNotes = addNotes, scale = scale, percent = percent,...)
   
   # Plot data delisse
   suffix <- ".dl"
-  plotMut0(dat$dateMid, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = colDeliss, thetit = "", 
+  plotMut0(dat$date, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = colDeliss, thetit = "", 
            ymin = ymin, ymax = ymax, 
            addNotes = addNotes, add = TRUE, pch = 1, scale = scale, ...)
 
@@ -409,3 +428,67 @@ plotReg("Corse")
 Alt text: graphique à 13 sous-figures, représentant pour chaque région de France métropolitaine la proportion de L452R+ au cours du temps. Augmentation partout, mais pas depuis le même moment ni exactement au même taux
 
 tweet quote logit: https://twitter.com/flodebarre/status/1525063184150822912?s=20&t=iuVJ996CxQCT6v_UlfGh4Q
+
+## By departement
+
+```{r}
+# Define function to plot a specific region reg
+plotDep <- function(dep, xmin = "2022-03-01", addNotes = FALSE, ymax = 0.1, ymin = 5*10^-4, withMut = TRUE, col = colLiss, scale = "logit", percent = FALSE, ...){
+  # withMut: whether to plot C1 / (C1 + C0) (TRUE), or C0 / (C1 + C0)
+  
+  # Subset of the data for this region
+  dat <- dat.Deps[which(dat.Deps$dep == dep & dat.Deps$date >= xmin), ]
+
+  #suffix <- ifelse(deliss, ".dl", "")
+  id <- ifelse(withMut, 1, 0)
+  
+  # Plot data as shared on data.gouv.fr
+  suffix <- ""
+  plotMut0(dat$date, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = colLiss, thetit = "", 
+           ymin = ymin, ymax = ymax, 
+           addNotes = addNotes, scale = scale, percent = percent,...)
+  
+  # Plot data delisse
+  suffix <- ".dl"
+  plotMut0(dat$date, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = colDeliss, thetit = "", 
+           ymin = ymin, ymax = ymax, 
+           addNotes = addNotes, add = TRUE, pch = 1, scale = scale, ...)
+
+  # Region name as title  
+  title(main = paste0(unique(dat$nom_dep), " (", dep, ")"))
+}
+
+# Check function with IDF region
+layout(1)
+plotDep("35")
+```
+
+Mega map
+
+```{r}
+setwd("../../data")
+source("layout_departements_new.R")
+setwd("../nouveauCriblage/scripts/")
+
+# Plot layout, placing each departement approximately where it is on the French map
+layout(deps.indices, heights = heights.deps, widths = widths.deps)
+
+i <- 1
+xmin <- "2022-03-01"
+for(i in geo.departements$index){
+  dep <- geo.departements[i, "code_departement"]
+  
+    # Subset of the data for this region
+  dat <- dat.Deps[which(dat.Deps$dep == dep & dat.Deps$date >= xmin), ]
+
+  # Plot data as shared on data.gouv.fr
+  id <- 1
+  suffix <- ".sum7_mid"
+  par(mar = c(0, 0, 1, 0))
+  plotMut0(dat$date, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = colLiss, thetit = "", 
+           ymin = 0.0001, ymax = 0.05, 
+           addNotes = FALSE, scale = "logit", percent = FALSE, title = FALSE, axes = FALSE, add = FALSE)
+  mtext(side = 3, text = dep, line = 0)
+}
+```
+
