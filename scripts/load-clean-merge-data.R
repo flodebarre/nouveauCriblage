@@ -1,22 +1,26 @@
 #### INITIALIZATIONS #### 
 
+# Whether to plot diagnostic plots
 plotCompare <- FALSE
 
-# Sliding window function
-source("usefulFunctions.R")
-
+# Colors for diagnostic plots
 library("MetBrewer")
 colON <- met.brewer("Tiepolo", n = 5, type = "discrete")
 colOld <- colON[2]
 colNew <- colON[3]
 colCombined <- colON[5]
 
+# Sliding window function
+source("usefulFunctions.R")
+
 #### LOAD DATA ####
 
 ##### Criblage data #####
 
-# Source of the data:  
+# Old Source of the data:  
 # <https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-mutations/>
+# New source of the data: 
+# <https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-a-compter-du-18-05-2022-si-dep/>
   
 # OLD URLS
 URL_Deps_old <- "https://www.data.gouv.fr/fr/datasets/r/4d3e5a8b-9649-4c41-86ec-5420eb6b530c"
@@ -24,9 +28,13 @@ URL_Regions_old <- "https://www.data.gouv.fr/fr/datasets/r/5ff0cad6-f150-47ea-a4
 URL_France_old <- "https://www.data.gouv.fr/fr/datasets/r/848debc4-0e42-4e3b-a176-afc285ed5401"
 
 # NEW URLS
-URL_Regions <- "https://www.data.gouv.fr/fr/datasets/r/9ed7f76c-09bc-43fb-997a-a1733faa6e8b"
-URL_France <- "https://www.data.gouv.fr/fr/datasets/r/7eade8d7-f79a-4c7f-8579-51f3f7104cfb"
-URL_Deps <- "https://www.data.gouv.fr/fr/datasets/r/ba8219dc-948c-418a-9116-f792c79c54b8"
+# The commented versions are for the older versions of the files (between Jan 2022 and May 2022)
+URL_Regions <- "https://www.data.gouv.fr/fr/datasets/r/0f26c511-e237-4b76-8a8b-8d8b37b7b287"
+URL_France <- "https://www.data.gouv.fr/fr/datasets/r/3e4fa086-8642-4d30-8316-7d4ec4cf893b"
+URL_Deps <- "https://www.data.gouv.fr/fr/datasets/r/bc318bc7-fb90-4e76-a6cb-5cdc0a4e5432"
+#URL_Deps <- "https://www.data.gouv.fr/fr/datasets/r/ba8219dc-948c-418a-9116-f792c79c54b8"
+#URL_Regions <- "https://www.data.gouv.fr/fr/datasets/r/9ed7f76c-09bc-43fb-997a-a1733faa6e8b"
+#URL_France <- "https://www.data.gouv.fr/fr/datasets/r/7eade8d7-f79a-4c7f-8579-51f3f7104cfb"
 
 ## Old data
 # Download old data
@@ -81,6 +89,7 @@ dat.France.new <- read.csv("../data/muts_France.csv", sep = ";", stringsAsFactor
 dat.Regions.new <- read.csv("../data/muts_Regions.csv", sep = ";", stringsAsFactors = FALSE)
 
 if(!is.na(URL_Deps)){
+  # This control exists because at some point the file was missing
   dat.Deps.new <- read.csv("../data/muts_Deps.csv", sep = ";", stringsAsFactors = FALSE)
 }
 
@@ -89,10 +98,12 @@ if(!is.na(URL_Deps)){
 
 # Source:
 # <https://www.data.gouv.fr/fr/datasets/donnees-relatives-aux-resultats-des-tests-virologiques-covid-19/#>
+# New Source:
+# <https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-a-compter-du-18-05-2022-si-dep/>
   
-URLtest_France <- "https://www.data.gouv.fr/fr/datasets/r/dd0de5d9-b5a5-4503-930a-7b08dc0adc7c"
-URLtest_Reg <- "https://www.data.gouv.fr/fr/datasets/r/001aca18-df6a-45c8-89e6-f82d689e6c01"
-URLtest_Dep <- "https://www.data.gouv.fr/fr/datasets/r/406c6a23-e283-4300-9484-54e78c8ae675"
+URLtest_France <- "https://www.data.gouv.fr/fr/datasets/r/d349accb-56ef-4b53-b218-46c2a7f902e0" #"https://www.data.gouv.fr/fr/datasets/r/dd0de5d9-b5a5-4503-930a-7b08dc0adc7c"
+URLtest_Reg <- "https://www.data.gouv.fr/fr/datasets/r/8b382611-4b86-41ff-9e58-9ee638a6d564" #"https://www.data.gouv.fr/fr/datasets/r/001aca18-df6a-45c8-89e6-f82d689e6c01"
+URLtest_Dep <- "https://www.data.gouv.fr/fr/datasets/r/674bddab-6d61-4e59-b0bd-0be535490db0" #"https://www.data.gouv.fr/fr/datasets/r/406c6a23-e283-4300-9484-54e78c8ae675"
 
 if(dlData){
   download.file(URLtest_France, "../data/tests_France.csv")
@@ -104,14 +115,26 @@ if(dlData){
 }
 
 # Load data
-tests.France <- read.csv("../data/tests_France.csv", sep = ";", stringsAsFactors = FALSE)
-tests.Reg <- read.csv("../data/tests_Reg.csv", sep = ";", stringsAsFactors = FALSE)
-tests.Deps <- read.csv("../data/tests_Deps.csv", sep = ";", stringsAsFactors = FALSE)
+tests.France <- read.csv("../data/tests_France.csv", sep = ";", stringsAsFactors = FALSE, dec = ",")
+tests.Reg <- read.csv("../data/tests_Reg.csv", sep = ";", stringsAsFactors = FALSE, dec = ",")
+tests.Deps <- read.csv("../data/tests_Deps.csv", sep = ";", stringsAsFactors = FALSE, dec = ",")
 
 # Criblage is without age classes: remove them now to avoid errors
-tests.France <- tests.France[which(tests.France$cl_age90 == 0), ]
-tests.Reg <- tests.Reg[which(tests.Reg$cl_age90 == 0), ]
-tests.Deps <- tests.Deps[which(tests.Deps$cl_age90 == 0), ]
+#tests.France <- tests.France[which(tests.France$cl_age90 == 0), ]
+#tests.Reg <- tests.Reg[which(tests.Reg$cl_age90 == 0), ]
+#tests.Deps <- tests.Deps[which(tests.Deps$cl_age90 == 0), ]
+
+# Hopefully this is only temporary: the 0 age class with all data has gone missing...
+tF <- aggregate(tests.France[, c("P", "T")], by = list("jour" = tests.France$jour), FUN = sum)
+tR <- aggregate(tests.Reg[, c("P", "T")], by = list("reg" = tests.Reg$reg, "jour" = tests.Reg$jour), FUN = sum)
+head(tests.Deps)
+tD <- aggregate(tests.Deps[, c("P", "T")], by = list("dep" = tests.Deps$dep, "jour" = tests.Deps$jour), FUN = sum)
+
+tests.France <- tF
+tests.Reg <- tR
+tests.Deps <- tD
+#--- end of hopefully temporary section
+
 
 # Compute sliding averages
 tests.France$P7j <- sliding.window(tests.France$P)
@@ -125,97 +148,106 @@ tests.France$T7j <- sliding.window(tests.France$T)
 
 ## Define functions
 
-# Define function to "delisser" the data
-deliss <- function(s, print = FALSE){
-  # s vector to be delissé 
-  # print: bool, whether to print diagnotic outputs
-  
-  # Create output of daily data
-  n <- c(rep(0, 7), rep(NA, length(s) - 7))
-  # Label days along the week
-  values <- rep(1:7, ceiling(length(s)/7))[1:length(s)]
-  
-  # Recursion; Loop on values
-  for(i in 8:length(n)){
-    n[i] <- s[i] - s[i-1] + n[i-7]
-  }
-  
-  # Find the minimum values for each of the first 7 points
-  # such that there is no negative value
-  for(j in 1:7){ # Days along a week
-    n[j] <- - min(n[values == j])
-  }
-  if(print) print(n)
-  
-  # Check how many tests are still missing
-  difference <- s[7] - sum(n[1:7])
-  if(print) print(difference)
-  
-  if(difference < 0) error("Investigate, difference is negative")
-  
-  # If we have not assigned all values
-  if(difference > 0){
-    # Repeat delissage to remove negative values
-    for(i in 8:length(n)){
-      n[i] <- s[i] - s[i-1] + n[i-7]
-    }
-    
-    # Compute the distribution of numbers of tests along the days of the week
-    aggn <- aggregate(n, by = list(values), FUN = sum)
-    sumx <- sum(aggn$x)
-    if(sumx > 0){
-      aggn$p <- aggn$x / sumx
-    }else{ # Can be = 0...!
-      aggn$p <- aggn$x
-    }
-    
-    # Assign the left-over values according to this distribution
-    newn <- rep(NA, 7)
-    newn[1:6] <- round(aggn[1:6, "p"] * difference)
-    newn[7] <- difference - sum(newn[1:6])
-    if(print) print(newn)
-    
-    # If we had too many tests in the previous days, and the last one ends up negative,
-    # remove values before
-    while(newn[7] < 0){
-      # Choose one day at random
-      k <- sample(1:6, size = 1)
-      if(newn[k] > 0){ # If we can remove a day
-        newn[k] <- newn[k] - 1 # Remove it
-        newn[7] <- difference - sum(newn[1:6]) # Recompute newn[7]
-      }
-    }
-    
-    if(print) print(newn)
-    stopifnot(all(newn >= 0)) # Security check
-    
-    # Add them to the ns
-    n[1:7] <- n[1:7] + newn
-  }
-  
-  # Repeat delissage with these values
-  for(i in 8:length(n)){
-    n[i] <- s[i] - s[i-1] + n[i-7]
-  }
-  
-  n
-}
+source("deliss.R")
 
-# Function to delisser multiple columns and add date
-# Need to be careful with dates
-delissWithDate <- function(dat, cols, print = FALSE){
-  # dat our dataset, with time columns
-  # cols columns to be "delisee", as vector of chars
-  # Check that all dates are consecutive
-  dates <- as.Date(as.Date(substring(dat$semaine, 12, 21)))
-  stopifnot(all(as.numeric(diff(dates)) == 1))
-  out <- dat
-  for(col in cols){
-    out[, paste0(col, ".dl")] <- deliss(dat[, col], print = print)
-  }
-  out$dateDeliss <- dates
-  out 
-}
+# # Define function to "delisser" the data
+# deliss <- function(s, print = FALSE){
+#   # s vector to be delissé 
+#   # print: bool, whether to print diagnotic outputs
+#   
+#   # Create output of daily data
+#   n <- c(rep(0, 7), rep(NA, length(s) - 7))
+#   # Label days along the week
+#   values <- rep(1:7, ceiling(length(s)/7))[1:length(s)]
+#   
+#   # Recursion; Loop on values
+#   # Here s is the sum of days [i-6, i]
+#   for(i in 8:length(n)){
+#     n[i] <- s[i] - s[i-1] + n[i-7]
+#   }
+#   
+#   # Find the minimum values for each of the first 7 points
+#   # such that there is no negative value
+#   for(j in 1:7){ # Days along a week
+#     mj <- min(n[values == j])
+#     if(mj < 0){ 
+#       # If there are negative values, set the new value, 
+#       # but if there are no negative values, keep 0
+#       n[j] <- - min(n[values == j])
+#     }
+#   }
+#   if(print) print(n)
+#   
+#   # Repeat delissage to remove negative values
+#   for(i in 8:length(n)){
+#     n[i] <- s[i] - s[i-1] + n[i-7]
+#   }
+# 
+#   # Check how many tests are still missing
+#   difference <- s[7] - sum(n[1:7])
+#   if(print) print(difference)
+#   
+#   if(difference < 0) error("Investigate, difference is negative")
+#   
+#   # If we have not assigned all values
+#   if(difference > 0){
+#     
+#     # Compute the distribution of numbers of tests along the days of the week
+#     aggn <- aggregate(n, by = list(values), FUN = sum)
+#     sumx <- sum(aggn$x)
+#     if(sumx > 0){
+#       aggn$p <- aggn$x / sumx
+#     }else{ # Can be = 0...!
+#       aggn$p <- aggn$x
+#     }
+#     
+#     # Assign the left-over values according to this distribution
+#     newn <- rep(NA, 7)
+#     newn[1:6] <- round(aggn[1:6, "p"] * difference)
+#     newn[7] <- difference - sum(newn[1:6])
+#     if(print) print(newn)
+#     
+#     # If we had too many tests in the previous days, and the last one ends up negative,
+#     # remove values before
+#     while(newn[7] < 0){
+#       # Choose one day at random
+#       k <- sample(1:6, size = 1)
+#       if(newn[k] > 0){ # If we can remove a day
+#         newn[k] <- newn[k] - 1 # Remove it
+#         newn[7] <- difference - sum(newn[1:6]) # Recompute newn[7]
+#       }
+#     }
+#     
+#     if(print) print(newn)
+#     stopifnot(all(newn >= 0)) # Security check
+#     
+#     # Add them to the ns
+#     n[1:7] <- n[1:7] + newn
+#   }
+#   
+#   # Repeat delissage with these values
+#   for(i in 8:length(n)){
+#     n[i] <- s[i] - s[i-1] + n[i-7]
+#   }
+#   
+#   n
+# }
+# 
+# # Function to delisser multiple columns and add date
+# # Need to be careful with dates
+# delissWithDate <- function(dat, cols, print = FALSE){
+#   # dat our dataset, with time columns
+#   # cols columns to be "delisee", as vector of chars
+#   # Check that all dates are consecutive
+#   dates <- as.Date(as.Date(substring(dat$semaine, 12, 21)))
+#   stopifnot(all(as.numeric(diff(dates)) == 1))
+#   out <- dat
+#   for(col in cols){
+#     out[, paste0(col, ".dl")] <- deliss(dat[, col], print = print)
+#   }
+#   out$dateDeliss <- dates
+#   out 
+# }
 
 ## Do it!
 # Column names in the datasets
@@ -257,8 +289,6 @@ for(i in 2:length(regs)){
   tmp <- rbind(tmp, delissWithDate(tmpdat, cols.new))
 }
 dat.Regions.new <- tmp
-
-
 #------
 
 # By départements
@@ -332,168 +362,43 @@ computeSum <- function(dat, col){
 
 #------
 
-## France
-
-tmp.France <- merge(dat.France.new, dat.France.old, all = TRUE, by = c("fra", "semaine", "dateDeliss"))
-dim(dat.France.new)
-dim(dat.France.old)
-dim(tmp.France)
-head(tmp.France)
-
-# Format date
-tmp.France$date1 <- as.Date(substring(tmp.France$semaine, 1, 10))
-tmp.France$date2 <- as.Date(substring(tmp.France$semaine, 12, 21))
-tmp.France$dateDeliss <- tmp.France$date2
-
-# Mid-interval date
-tmp.France$dateMid <- tmp.France$date2 - 3
-
-# Rewrite time as days since beginning of the data
-tmp.France$time <- tmp.France$dateMid - min(tmp.France$dateMid)
-
-# nb_crib
-tmp.France$nb_crib <- computeSum(tmp.France, "nb_crib")
-compare.xy(tmp.France, "nb_crib")
-
-# nb_pos
-tmp.France$nb_pos <- tmp.France$nb_pos.x # New ones for times >= 2021-01-06
-tmp.France[is.na(tmp.France$nb_pos), "nb_pos"] <- tmp.France[is.na(tmp.France$nb_pos), "nb_pos.y"] # Old ones
-compare.xy(tmp.France, "nb_pos")
-
-# A0
-tmp.France$nb_A0 <- computeSum(tmp.France, "nb_A0")
-compare.xy(tmp.France, "nb_A0")
-
-# A1
-tmp.France$nb_A1 <- computeSum(tmp.France, "nb_A1")
-compare.xy(tmp.France, "nb_A1")
-
-# C0
-tmp.France$nb_C0 <- computeSum(tmp.France, "nb_C0")
-compare.xy(tmp.France, "nb_C0")
-
-# C1
-tmp.France$nb_C1 <- computeSum(tmp.France, "nb_C1")
-compare.xy(tmp.France, "nb_C1")
-
-# .dl
-tmp.France$nb_A0.dl <- computeSum(tmp.France, "nb_A0.dl")
-tmp.France$nb_A1.dl <- computeSum(tmp.France, "nb_A1.dl")
-tmp.France$nb_C0.dl <- computeSum(tmp.France, "nb_C0.dl")
-tmp.France$nb_C1.dl <- computeSum(tmp.France, "nb_C1.dl")
-
-#------
-
-## Regions
-
-tmp.Regions <- merge(dat.Regions.new, dat.Regions.old, all = TRUE, by = c("reg", "semaine", "dateDeliss"))
-dim(dat.Regions.new)
-dim(dat.Regions.old)
-dim(tmp.Regions)
-head(tmp.Regions)
-head(dat.Regions.new)
-
-# Format date
-tmp.Regions$date1 <- as.Date(substring(tmp.Regions$semaine, 1, 10))
-tmp.Regions$date2 <- as.Date(substring(tmp.Regions$semaine, 12, 21))
-tmp.Regions$dateDeliss <- tmp.Regions$date2
-
-# Mid-interval date
-tmp.Regions$dateMid <- tmp.Regions$date2 - 3
-
-# Rewrite time as days since beginning of the data
-tmp.Regions$time <- tmp.Regions$dateMid - min(tmp.Regions$dateMid)
-
-# nb_crib
-tmp.Regions$nb_crib <- computeSum(tmp.Regions, "nb_crib")
-compare.xy(tmp.Regions, "nb_crib")
-
-# nb_pos
-tmp.Regions$nb_pos <- tmp.Regions$nb_pos.x # New ones for times >= 2021-01-06
-tmp.Regions[is.na(tmp.Regions$nb_pos), "nb_pos"] <- tmp.Regions[is.na(tmp.Regions$nb_pos), "nb_pos.y"] # Old ones
-compare.xy(tmp.Regions, "nb_pos")
-
-# A0
-tmp.Regions$nb_A0 <- computeSum(tmp.Regions, "nb_A0")
-compare.xy(tmp.Regions, "nb_A0")
-
-# A1
-tmp.Regions$nb_A1 <- computeSum(tmp.Regions, "nb_A1")
-compare.xy(tmp.Regions, "nb_A1")
-
-# C0
-tmp.Regions$nb_C0 <- computeSum(tmp.Regions, "nb_C0")
-compare.xy(tmp.Regions, "nb_C0")
-
-# C1
-tmp.Regions$nb_C1 <- computeSum(tmp.Regions, "nb_C1")
-compare.xy(tmp.Regions, "nb_C1")
-
-# .dl
-tmp.Regions$nb_A0.dl <- computeSum(tmp.Regions, "nb_A0.dl")
-tmp.Regions$nb_A1.dl <- computeSum(tmp.Regions, "nb_A1.dl")
-tmp.Regions$nb_C0.dl <- computeSum(tmp.Regions, "nb_C0.dl")
-tmp.Regions$nb_C1.dl <- computeSum(tmp.Regions, "nb_C1.dl")
-
-#------
-
-## Departements
-
-if(!is.na(URL_Deps)){
-  tmp.Deps <- merge(dat.Deps.new, dat.Deps.old, all = TRUE, by = c("dep", "semaine", "dateDeliss"))
-  dim(dat.Deps.new)
-  dim(dat.Deps.old)
-  dim(tmp.Deps)
-  head(tmp.Deps)
-  head(dat.Deps.new)
+# Finalize merge of old and new datasets
+finalizeMerge <- function(dat){
+  # dat : merged dataset
   
   # Format date
-  tmp.Deps$date1 <- as.Date(substring(tmp.Deps$semaine, 1, 10))
-  tmp.Deps$date2 <- as.Date(substring(tmp.Deps$semaine, 12, 21))
-  tmp.Deps$dateDeliss <- tmp.Deps$date2
-  
-  # Mid-interval date
-  tmp.Deps$dateMid <- tmp.Deps$date2 - 3
-  
-  # Rewrite time as days since beginning of the data
-  tmp.Deps$time <- tmp.Deps$dateMid - min(tmp.Deps$dateMid)
-  
-  
-  # nb_crib
-  tmp.Deps$nb_crib <- computeSum(tmp.Deps, "nb_crib")
-  #compare.xy(tmp.Deps, "nb_crib")
+  dat$date <- dat$dateDeliss
   
   # nb_pos
-  tmp.Deps$nb_pos <- tmp.Deps$nb_pos.x # New ones for times >= 2021-01-06
-  tmp.Deps[is.na(tmp.Deps$nb_pos), "nb_pos"] <- tmp.Deps[is.na(tmp.Deps$nb_pos), "nb_pos.y"] # Old ones
-  #compare.xy(tmp.Deps, "nb_pos")
+  dat$nb_pos <- dat$nb_pos.x # New ones for times >= 2021-01-06
+  #   and add old ones
+  dat[is.na(dat$nb_pos), "nb_pos"] <- dat[is.na(dat$nb_pos), "nb_pos.y"] 
+  #compare.xy(dat, "nb_pos")
   
-  # A0
-  tmp.Deps$nb_A0 <- computeSum(tmp.Deps, "nb_A0")
-  #compare.xy(tmp.Deps, "nb_A0")
+  # nb_crib
+  dat[, "nb_crib"] <- computeSum(dat, "nb_crib")
   
-  # A1
-  tmp.Deps$nb_A1 <- computeSum(tmp.Deps, "nb_A1")
-  #compare.xy(tmp.Deps, "nb_A1")
+  # Other columns
+  for(cible in c("A0", "A1", "C0", "C1")){
+    for(suffix in c("", ".dl", ".sum7_mid")){
+      dat[, paste0("nb_", cible, suffix)] <- computeSum(dat, paste0("nb_", cible, suffix))
+    }
+  }
   
-  # C0
-  tmp.Deps$nb_C0 <- computeSum(tmp.Deps, "nb_C0")
-  #compare.xy(tmp.Deps, "nb_C0")
-  
-  # C1
-  tmp.Deps$nb_C1 <- computeSum(tmp.Deps, "nb_C1")
-  #compare.xy(tmp.Deps, "nb_C1")
-  
-  # .dl
-  tmp.Deps$nb_A0.dl <- computeSum(tmp.Deps, "nb_A0.dl")
-  tmp.Deps$nb_A1.dl <- computeSum(tmp.Deps, "nb_A1.dl")
-  tmp.Deps$nb_C0.dl <- computeSum(tmp.Deps, "nb_C0.dl")
-  tmp.Deps$nb_C1.dl <- computeSum(tmp.Deps, "nb_C1.dl")
-  
-  
-}else{
-  tmp.Deps <- dat.Deps.old
+  return(dat)
 }
+
+
+
+## France
+tmp.France <- finalizeMerge(merge(dat.France.new, dat.France.old, all = TRUE, by = c("dateDeliss")))
+
+## Regions
+tmp.Regions <- finalizeMerge(merge(dat.Regions.new, dat.Regions.old, all = TRUE, by = c("reg", "dateDeliss")))
+
+## Departements
+tmp.Deps <- finalizeMerge(merge(dat.Deps.new, dat.Deps.old, all = TRUE, by = c("dep", "dateDeliss")))
+
 
 #------
 
@@ -507,9 +412,10 @@ dat.Deps <- tmp.Deps
 #### COMBINE CRIBLAGE AND TESTS ####
 
 # Turn dates into dates for merging
-tests.France$dateMid <- as.Date(tests.France$jour)
-tests.Reg$dateMid <- as.Date(tests.Reg$jour)
-tests.Deps$dateMid <- as.Date(tests.Deps$jour)
+tests.France$date <- as.Date(tests.France$jour)
+tests.Reg$date <- as.Date(tests.Reg$jour)
+tests.Deps <- tests.Deps[nchar(tests.Deps$jour) == 10, ]
+tests.Deps$date <- as.Date(tests.Deps$jour)
 
 unique(tests.Reg$reg)
 unique(tests.Deps$dep)
@@ -517,12 +423,12 @@ unique(dat.Deps$dep)
 head(tests.France)
 head(dat.France)
 
-dat.France <- merge(dat.France, tests.France, all = TRUE, by = "dateMid")
+dat.France <- merge(dat.France, tests.France, all = TRUE, by = "date")
 
-dat.Regions <- merge(dat.Regions, tests.Reg, all = TRUE, by = c("dateMid", "reg"))
+dat.Regions <- merge(dat.Regions, tests.Reg, all = TRUE, by = c("date", "reg"))
 
 if(!is.na(URL_Deps)){
-  dat.Deps <- merge(dat.Deps, tests.Deps, all = TRUE, by = c("dateMid", "dep"))
+  dat.Deps <- merge(dat.Deps, tests.Deps, all = TRUE, by = c("date", "dep"))
 }
 
 
