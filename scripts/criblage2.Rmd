@@ -235,6 +235,7 @@ Code: https://github.com/flodebarre/nouveauCriblage/blob/main/scripts/criblage2.
 }
 ```
 
+#### L452R / C
 
 ```{r L452R_France}
 # Plot France
@@ -242,7 +243,7 @@ layout(1)
 par(mar = c(4, 4, 4, 4))
 ix <- which(dat.France$date >= "2022-03-01")
 ym <- 5*10^-4 # plot range, minimal y value
-yM <- 0.1 # Plot range, max y value
+yM <- 0.5 # Plot range, max y value
 lang <- "EN"
 percent <- FALSE
 # Plot data as shared on data.gouv.fr
@@ -253,13 +254,15 @@ plotMut0(dat.France[ix, "date"], dat.France[ix, "nb_C1.sum7_mid"], dat.France[ix
 plotMut0(dat.France[ix, "date"], dat.France[ix, "nb_C1.dl"], dat.France[ix, "nb_C0.dl"], col = colDeliss, add = TRUE, pch = 1, addNotes = FALSE)
 ```
 
+#### K417N / D
+
 ```{r D_France}
 # Plot France
 layout(1)
 par(mar = c(4, 4, 4, 4))
-ix <- which(dat.France$date >= "2022-03-01")
-ym <- 0.95 # plot range, minimal y value
-yM <- 1 - 10^-4 # Plot range, max y value
+ix <- which(dat.France$date >= "2022-01-01")
+ym <- 0.9 # plot range, minimal y value
+yM <- 1 - 10^-3 # Plot range, max y value
 # Plot data as shared on data.gouv.fr
 plotMut0(dat.France[ix, "date"], dat.France[ix, "nb_D1.sum7_mid"], dat.France[ix, "nb_D0.sum7_mid"], col = colLiss, thetit = "Proportion of K417N+ tests, France", ymin = ym, ymax = yM, percent = percent)
 # Add data "delisse"
@@ -303,7 +306,7 @@ plot(xpred, pred$fit, type = "l", lwd = 2,
   # Plot the contour of the prediction as polygon +/- CI
 #  polygon(x = c(xpred, rev(xpred)), y = c(myinvlogit(pred2$fit - 1.96 * pred2$se.fit), rev(myinvlogit(pred2$fit + 1.96 * pred2$se.fit))), col = adjustcolor("pink", 0.4), border = NA)
   polygon(x = c(xpred, rev(xpred)), y = c(pred$fit - 1.96 * pred$se.fit, rev(pred$fit + 1.96 * pred$se.fit)), col = adjustcolor(colDeliss, 0.4), border = NA)
-  points(x = sub$date, y = sub[, n1] / (sub[, n1] + sub[, n2]))
+  points(x = sub$date, y = sub[, n1] / (sub[, n1] + sub[, n2]), col = colDeliss)
 axis(1, at = xpred, labels = format(xpred, "%d/%m"), las = 3, cex.axis = 0.9)
 axis(2, at = seq(0, 1, by = 0.05), las = 1)
 
@@ -364,11 +367,38 @@ lines(xpred, exp(predLogP$fit) + exp(predLogQ$fit), col = "black")
 legend("topright", col = c(colDeliss, colQD, "black"), lwd = c(2, 2, 1), legend = c("452R+ (and Q?)", "452R-", "total cases"), bty = "n")
 ```
 
+### History
+
+```{r}
+minDate <- "2021-05-01"
+tmp <- dat.France[dat.France$date >= minDate, ]
+par(las = 1)
+par(mar = c(4, 4, 2, 1))
+thecol <- "#FF7F50"
+plot(tmp$date, tmp$nb_C1.sum7_mid / (tmp$nb_C0.sum7_mid + tmp$nb_C1.sum7_mid), type = "l", axes = FALSE, 
+     xlab = "", ylab = "Proportion L452R", lwd = 3, col = thecol)
+mnth <- seq(as.Date(minDate), Sys.Date(), by = "month")
+axis(1, at = mnth, labels = format(mnth, "%b\n%Y"), padj = 0.5, pos = 0)
+axis(2, at = seq(0, 1, by = 0.1))
+
+
+text(x = as.Date("2021-07-15"), y = 0.2, labels = "1ere\nvague\nDelta", adj = 0.5, col = "#AF601A")
+
+text(x = as.Date("2022-01-15"), y = 0.8, labels = "vague\nOmicron", col = "#1F618D")
+
+text(x = as.Date("2022-05-01"), y = 0.2 , labels = "Sous-lignées\n Omicron")
+
+mtext(text = 
+"Données : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-
+           pour-le-depistage-a-compter-du-18-05-2022-si-dep/", family = "mono", col = gray(0.5), cex = 0.7, side = 1, line = 2.75, adj = 0)
+```
+
+
 ## By region 
 
 ```{r}
 # Define function to plot a specific region reg
-plotReg <- function(reg, xmin = "2022-04-01", addNotes = FALSE, ymax = 0.2, ymin = 1*10^-3, withMut = TRUE, col = colLiss, scale = "logit", percent = FALSE, lang = "FR", ...){
+plotReg <- function(reg, xmin = "2022-04-01", addNotes = FALSE, ymax = 0.5, ymin = 1*10^-3, withMut = TRUE, col = colLiss, scale = "logit", percent = FALSE, lang = "FR", ...){
   # withMut: whether to plot C1 / (C1 + C0) (TRUE), or C0 / (C1 + C0)
   
   # Subset of the data for this region
@@ -540,7 +570,7 @@ for(i in geo.departements$index){
   suffix <- ".sum7_mid"
   par(mar = c(0, 0, 1, 0))
   plotMut0(dat$date, dat[, paste0("nb_C", toString(id), suffix)], dat[, paste0("nb_C", toString(1 - id), suffix)], col = colLiss, thetit = "", 
-           ymin = 0.0001, ymax = 0.1, 
+           ymin = 0.0001, ymax = 0.5, 
            addNotes = FALSE, scale = "logit", percent = FALSE, title = FALSE, axes = FALSE, add = FALSE)
   mtext(side = 3, text = dep, line = 0)
 }
