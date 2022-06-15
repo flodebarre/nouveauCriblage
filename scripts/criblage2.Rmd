@@ -243,7 +243,7 @@ layout(1)
 par(mar = c(4, 4, 4, 4))
 ix <- which(dat.France$date >= "2022-03-01")
 ym <- 5*10^-4 # plot range, minimal y value
-yM <- 0.5 # Plot range, max y value
+yM <- 0.8#1 - ym # Plot range, max y value
 lang <- "EN"
 percent <- FALSE
 # Plot data as shared on data.gouv.fr
@@ -252,6 +252,16 @@ tit <- ifelse(lang == "FR", "Proportion de tests L452R+ (et Q?), France", "Propo
 plotMut0(dat.France[ix, "date"], dat.France[ix, "nb_C1.sum7_mid"], dat.France[ix, "nb_C0.sum7_mid"], col = colLiss, thetit = tit, ymin = ym, ymax = yM, lang = lang, percent = percent)
 # Add data "delisse"
 plotMut0(dat.France[ix, "date"], dat.France[ix, "nb_C1.dl"], dat.France[ix, "nb_C0.dl"], col = colDeliss, add = TRUE, pch = 1, addNotes = FALSE)
+
+abline(h = log(1), col = gray(0.8), lty = 2)
+
+
+# The same on a linear scale
+plotMut0(dat.France[ix, "date"], dat.France[ix, "nb_C1.sum7_mid"], dat.France[ix, "nb_C0.sum7_mid"], col = colLiss, thetit = tit, ymin = ym, ymax = yM, lang = lang, percent = percent, scale = "linear")
+# Add data "delisse"
+plotMut0(dat.France[ix, "date"], dat.France[ix, "nb_C1.dl"], dat.France[ix, "nb_C0.dl"], col = colDeliss, add = TRUE, pch = 1, addNotes = FALSE, scale = "linear")
+
+
 ```
 
 #### K417N / D
@@ -398,7 +408,8 @@ mtext(text =
 
 ```{r}
 # Define function to plot a specific region reg
-plotReg <- function(reg, xmin = "2022-04-01", addNotes = FALSE, ymax = 0.5, ymin = 1*10^-3, withMut = TRUE, col = colLiss, scale = "logit", percent = FALSE, lang = "FR", ...){
+ym <- 1*10^-3
+plotReg <- function(reg, xmin = "2022-04-01", addNotes = FALSE, ymax = 0.8, ymin = ym, withMut = TRUE, col = colLiss, scale = "logit", percent = FALSE, lang = "FR", ...){
   # withMut: whether to plot C1 / (C1 + C0) (TRUE), or C0 / (C1 + C0)
   
   # Subset of the data for this region
@@ -419,6 +430,14 @@ plotReg <- function(reg, xmin = "2022-04-01", addNotes = FALSE, ymax = 0.5, ymin
            ymin = ymin, ymax = ymax, 
            addNotes = addNotes, add = TRUE, pch = 1, scale = scale, lang = lang, ...)
 
+  # Plot 0.5 line
+  if(scale == "logit"){
+      y50 <- log(1)
+  }else{
+      y50 <- 0.5
+  }
+  abline(h = y50, col = gray(0.5), lty = 2)
+  
   # Region name as title  
   title(main = reg)
 }
@@ -549,7 +568,7 @@ plotDep("57")
 
 Mega map
 
-```{r, fig.width=9, fig.height=15}
+```{r, fig.width=9, fig.height=15, eval = FALSE}
 setwd("../../data")
 source("layout_departements_new.R")
 setwd("../nouveauCriblage/scripts/")
